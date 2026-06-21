@@ -1,0 +1,1008 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A pure-Go (CGO=0) FFT library — the numpy.fft / scipy.fft equivalent for Go, no FFTW.">
+      
+      
+      
+        <link rel="canonical" href="https://go-fft.github.io/docs/0.1/roadmap/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../performance/">
+      
+      
+      <link rel="icon" href="../assets/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
+    
+    
+      
+        <title>Roadmap (phases) - go-fft docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#go-fft-roadmap" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="go-fft docs" class="md-header__button md-logo" aria-label="go-fft docs" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            go-fft docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Roadmap (phases)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/go-fft/fft" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    go-fft/fft
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="go-fft docs" class="md-nav__button md-logo" aria-label="go-fft docs" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    go-fft docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/go-fft/fft" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    go-fft/fft
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Roadmap (phases)
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Roadmap (phases)
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Motivation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conventions-org-hard-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conventions (org HARD RULES)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-0-correct-pure-go-fft-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 0 — correct pure-Go FFT — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-real-optimized-rfft-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 1 — real-optimized RFFT — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-multi-dimensional-transforms-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 2 — multi-dimensional transforms — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-windowing-and-spectral-helpers-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 3 — windowing and spectral helpers — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-simd-kernels-via-go-asmgen-in-progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 4 — SIMD kernels via go-asmgen — IN PROGRESS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4 — SIMD kernels via go-asmgen — IN PROGRESS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generated-kernels-amd64-sse2-arm64-neon-s390x-vector-riscv64-rvv-all-bit-identical" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generated kernels — amd64 (SSE2), arm64 (NEON), s390x (vector), riscv64 (RVV), all bit-identical
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bit-identity-decides-which-arches-ship-a-kernel-correctness-over-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bit-identity decides which arches ship a kernel (correctness over coverage)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#measured-perf-honest-delta" class="md-nav__link">
+    <span class="md-ellipsis">
+      Measured perf (honest delta)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#split-ci-coverage-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Split CI + coverage policy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      Progress
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remaining" class="md-nav__link">
+    <span class="md-ellipsis">
+      Remaining
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-5-ruby-binding-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 5 — Ruby binding — DONE
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Performance
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Motivation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conventions-org-hard-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conventions (org HARD RULES)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-0-correct-pure-go-fft-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 0 — correct pure-Go FFT — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-real-optimized-rfft-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 1 — real-optimized RFFT — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-multi-dimensional-transforms-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 2 — multi-dimensional transforms — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-windowing-and-spectral-helpers-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 3 — windowing and spectral helpers — DONE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-simd-kernels-via-go-asmgen-in-progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 4 — SIMD kernels via go-asmgen — IN PROGRESS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4 — SIMD kernels via go-asmgen — IN PROGRESS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generated-kernels-amd64-sse2-arm64-neon-s390x-vector-riscv64-rvv-all-bit-identical" class="md-nav__link">
+    <span class="md-ellipsis">
+      Generated kernels — amd64 (SSE2), arm64 (NEON), s390x (vector), riscv64 (RVV), all bit-identical
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bit-identity-decides-which-arches-ship-a-kernel-correctness-over-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bit-identity decides which arches ship a kernel (correctness over coverage)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#measured-perf-honest-delta" class="md-nav__link">
+    <span class="md-ellipsis">
+      Measured perf (honest delta)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#split-ci-coverage-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Split CI + coverage policy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      Progress
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remaining" class="md-nav__link">
+    <span class="md-ellipsis">
+      Remaining
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-5-ruby-binding-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Phase 5 — Ruby binding — DONE
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="go-fft-roadmap">go-fft roadmap<a class="headerlink" href="#go-fft-roadmap" title="Permanent link">&para;</a></h1>
+<p><code>go-fft/fft</code> is a pure-Go (cgo-free) FFT library — the <code>numpy.fft</code> / <code>scipy.fft</code>
+equivalent for Go, with no dependency on the native FFTW3 C library.</p>
+<h2 id="motivation">Motivation<a class="headerlink" href="#motivation" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Ruby has no cgo-free FFT.</strong> Every Ruby option binds the FFTW3 C library, so
+  an embedded-Ruby runtime that wants to stay <code>CGO_ENABLED=0</code> cannot use them.
+  <code>go-fft</code> is the FFT backend for
+  <a href="https://github.com/go-embedded-ruby/ruby">go-embedded-ruby</a> (planned binding,
+  Phase 4).</li>
+<li><strong><code>gonum/dsp/fourier</code> is pure Go but its optimized assembly is amd64-only.</strong>
+  <code>go-fft</code> targets a portable scalar core first, then SIMD kernels generated by
+  <a href="https://github.com/go-asmgen">go-asmgen</a> across <strong>all six</strong> 64-bit Go targets
+  (amd64, arm64, riscv64, loong64, ppc64le, s390x).</li>
+</ul>
+<h2 id="conventions-org-hard-rules">Conventions (org HARD RULES)<a class="headerlink" href="#conventions-org-hard-rules" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Pure Go, <code>CGO_ENABLED=0</code>, no vendoring, build from source.</li>
+<li>100% statement coverage, enforced in CI (gate <code>&gt;= 100.0</code>); the test suite must
+  also exit 0, not merely report coverage.</li>
+<li>Validated on all six 64-bit targets in CI (amd64/arm64 native, the rest under
+  qemu-user).</li>
+<li>English only.</li>
+</ul>
+<h2 id="phase-0-correct-pure-go-fft-done">Phase 0 — correct pure-Go FFT — DONE<a class="headerlink" href="#phase-0-correct-pure-go-fft-done" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Complex FFT/IFFT over <code>[]complex128</code>, any length.</li>
+<li>Radix-2 iterative Cooley–Tukey for power-of-two lengths (bit-reversal
+    permutation + in-place butterfly stages).</li>
+<li>Bluestein's chirp-z algorithm for arbitrary <code>N</code>, reducing the DFT to a
+    power-of-two convolution.</li>
+<li>Unnormalized forward convention; IFFT divides by <code>N</code> so
+    <code>IFFT(FFT(x)) ≈ x</code>.</li>
+<li><code>FFTReal(x []float64) []complex128</code> — full complex spectrum.</li>
+<li>Edge cases: empty input, length 1; inputs are never mutated.</li>
+<li>Butterfly/bit-reversal loops isolated in <code>internal/kernels</code> so SIMD variants
+  can drop in behind the same signatures.</li>
+<li>Tests: round-trip (power-of-two and non-power-of-two), cross-check against a
+  naive O(N²) reference DFT, impulse → flat spectrum, constant → DC spike,
+  sinusoid → single bin spike, linearity, no-mutation.</li>
+</ul>
+<h2 id="phase-1-real-optimized-rfft-done">Phase 1 — real-optimized RFFT — DONE<a class="headerlink" href="#phase-1-real-optimized-rfft-done" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>RFFT(x []float64) []complex128</code> returns only the non-redundant <code>N/2+1</code>
+  bins (<code>numpy.fft.rfft</code> convention); <code>IRFFT(spectrum, n) []float64</code>
+  reconstructs the length-<code>n</code> real signal (<code>numpy.fft.irfft</code>), normalized
+  by <code>n</code> so <code>IRFFT(RFFT(x), len(x)) ≈ x</code>.</li>
+<li>Even lengths use the half-length complex packing trick: pack the real
+  signal into a length-<code>N/2</code> complex array, take one size-<code>N/2</code> FFT, then
+  untangle — ~2× throughput over <code>FFTReal</code>. Odd lengths fall back to the
+  full complex transform and slice the kept bins.</li>
+<li>First benchmark suite added (<code>FFT</code>/<code>RFFT</code>/<code>FFTReal</code>/<code>IRFFT</code> vs the naive
+  <code>O(N²)</code> DFT baseline) to anchor the Phase 4 SIMD work.</li>
+<li>Tests: cross-check against the full complex spectrum and the naive DFT,
+  conjugate symmetry of the dropped half, real DC/Nyquist bins, an analytic
+  cosine spike, round-trip for even and odd <code>N</code>, explicit Hermitian-mirror
+  reconstruction, edge cases, and no-mutation.</li>
+</ul>
+<h2 id="phase-2-multi-dimensional-transforms-done">Phase 2 — multi-dimensional transforms — DONE<a class="headerlink" href="#phase-2-multi-dimensional-transforms-done" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>FFTN(data, shape)</code>/<code>IFFTN(data, shape)</code> over a flat row-major (C-order)
+  <code>[]complex128</code> paired with an explicit <code>[]int</code> shape: the separable
+  N-dimensional DFT, applying the 1-D FFT along each axis in turn
+  (<code>numpy.fft.fftn</code>/<code>ifftn</code>). Forward is unnormalized; the inverse divides by the
+  product of the transformed axis lengths so <code>IFFTN(FFTN(x)) ≈ x</code>. A mismatched
+  or non-positive shape panics, mirroring numpy.</li>
+<li><code>FFT2(data, [2]int)</code>/<code>IFFT2(data, [2]int)</code> — the 2-D specialization
+  (<code>numpy.fft.fft2</code>/<code>ifft2</code>), a thin wrapper over <code>FFTN</code>.</li>
+<li>Real 2-D variants <code>RFFT2(data, [2]int)</code>/<code>IRFFT2(spectrum, [2]int)</code> for
+  image-style workloads (<code>numpy.fft.rfft2</code>/<code>irfft2</code>): the real transform runs
+  along the last axis (keeping <code>cols/2+1</code> bins per row), the full complex
+  transform down the columns; <code>IRFFT2</code> inverts and is normalized by
+  <code>rows*cols</code>. The caller passes the target shape explicitly.</li>
+<li>None of these mutate the caller's input.</li>
+<li>Tests: a separable naive-DFT N-D oracle, round-trip, FFT2≡FFTN, explicit
+  row-then-column separability, impulse→flat, constant→DC spike, linearity,
+  RFFT2 vs the kept bins of FFT2, RFFT2/IRFFT2 round-trip, zero-padded short
+  spectra, empty/length-1 shapes, shape-validation panics, and no-mutation.</li>
+</ul>
+<h2 id="phase-3-windowing-and-spectral-helpers-done">Phase 3 — windowing and spectral helpers — DONE<a class="headerlink" href="#phase-3-windowing-and-spectral-helpers-done" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Symmetric window functions returning <code>[]float64</code> of a given length:
+  <code>Hann</code>, <code>Hamming</code>, <code>Blackman</code> (matching <code>numpy.hanning</code>/<code>hamming</code>/<code>blackman</code>),
+  <code>Bartlett</code> (<code>numpy.bartlett</code>), and the 4-term <code>BlackmanHarris</code>
+  (<code>scipy.signal.windows.blackmanharris</code>). <code>n &lt;= 0</code> returns an empty slice,
+  <code>n == 1</code> returns <code>[1]</code>.</li>
+<li><code>FFTFreq(n, d)</code> and <code>RFFTFreq(n, d)</code> bin-frequency helpers matching
+  <code>numpy.fft.fftfreq</code>/<code>rfftfreq</code> exactly — including the
+  <code>[0, …, (n-1)//2, -(n//2), …, -1] / (d·n)</code> ordering for <code>fftfreq</code> and the
+  <code>n//2+1</code> non-negative bins for <code>rfftfreq</code>.</li>
+<li><code>PSD(x, d)</code> one-sided power spectral density (periodogram, density scaling
+  with the negative-half folding, matching <code>scipy.signal.periodogram</code>), and
+  <code>Spectrogram(x, segment, overlap, window, d)</code> which windows successive
+  overlapping segments and returns a slice of one-sided PSD frames (STFT
+  convention: trailing partial segments dropped).</li>
+<li>Tests assert the EXACT numpy/scipy window and frequency values computed by
+  hand, window symmetry, a Parseval check tying PSD back to the signal mean
+  square (even and odd N, exercising the Nyquist-doubling branch), spectrogram
+  framing against an independent per-segment PSD, edge cases, validation panics,
+  and no-mutation.</li>
+</ul>
+<h2 id="phase-4-simd-kernels-via-go-asmgen-in-progress">Phase 4 — SIMD kernels via go-asmgen — IN PROGRESS<a class="headerlink" href="#phase-4-simd-kernels-via-go-asmgen-in-progress" title="Permanent link">&para;</a></h2>
+<p>The hot kernel chosen first is the <strong>pointwise (Hadamard) complex multiply</strong>,
+<code>a[i] *= b[i]</code> over <code>[]complex128</code>, which drives Bluestein's spectral product.
+The scalar <code>CMulScalar</code> is the portable correctness oracle; <code>CMul</code> is the stable
+dispatch seam the FFT core calls; per-arch <code>cmulSIMD</code> wrappers (over go-asmgen
+assembly) are validated bit-for-bit against the oracle.</p>
+<h3 id="generated-kernels-amd64-sse2-arm64-neon-s390x-vector-riscv64-rvv-all-bit-identical">Generated kernels — amd64 (SSE2), arm64 (NEON), s390x (vector), riscv64 (RVV), all bit-identical<a class="headerlink" href="#generated-kernels-amd64-sse2-arm64-neon-s390x-vector-riscv64-rvv-all-bit-identical" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>internal/kernels/asmgen/amd64/gen.go</code> drives go-asmgen to emit
+  <code>cmul_amd64.s</code>: an SSE2 loop, one <code>complex128</code> per iteration, computing
+  <code>(ar·br − ai·bi, ar·bi + ai·br)</code> with <code>MULPD</code>/<code>SHUFPD</code>/<code>XORPD</code>/<code>ADDPD</code> and a
+  low-lane sign mask built in-register (no read-only data table). It is
+  <strong>bit-for-bit identical</strong> to the scalar oracle because every product and the
+  final add are separately rounded exactly as the scalar code rounds them — no
+  fused multiply-add (GOAMD64=v1 does not fuse).</li>
+<li><code>internal/kernels/asmgen/arm64/gen.go</code> drives go-asmgen to emit
+  <code>cmul_arm64.s</code>: a <strong>2-wide NEON</strong> loop processing <strong>two</strong> <code>complex128</code> per
+  iteration. <code>VLD2</code> deinterleaves a pair into a vector of reals and a vector of
+  imaginaries, the arithmetic runs two-lane, and <code>VST2</code> re-interleaves on store;
+  an odd final element is handled by a scalar tail. It is <strong>bit-for-bit
+  identical</strong> to the scalar oracle — see the fusion note below.</li>
+<li><code>internal/kernels/asmgen/s390x/gen.go</code> drives go-asmgen to emit
+  <code>cmul_s390x.s</code>: a <strong>2-wide z/Architecture vector-facility</strong> loop processing
+  <strong>two</strong> <code>complex128</code> per iteration. <code>VL</code> loads the pairs, <code>VMRHG</code>/<code>VMRLG</code>
+  deinterleave them into a vector of reals and a vector of imaginaries (big-endian
+  lane order), <code>VFMDB</code>/<code>VFMSDB</code>/<code>VFMADB</code> run the fused arithmetic two-lane, and
+  <code>VMRHG</code>/<code>VMRLG</code> + <code>VST</code> re-interleave on store; an odd final element is handled
+  by a scalar tail. It is <strong>bit-for-bit identical</strong> to the scalar oracle on the
+  project's only <strong>big-endian</strong> target — see the fusion note below.</li>
+<li><code>internal/kernels/asmgen/riscv64/gen.go</code> drives go-asmgen to emit
+  <code>cmul_riscv64.s</code>: a <strong>strip-mined RVV 1.0</strong> loop. Each iteration asks the
+  hardware for <code>vl = min(remaining, VLMAX)</code> via <code>VSETVLI</code> (E64, M1), then
+  <code>VLSEG2E64V</code> deinterleaves a run of <code>{re, im}</code> pairs into a vector of reals and
+  a vector of imaginaries, the fused arithmetic runs <code>vl</code>-wide
+  (<code>VFMUL.VV</code>/<code>VFNMSAC.VV</code>/<code>VFMACC.VV</code>), and <code>VSSEG2E64V</code> re-interleaves on store.
+  Strip-mining folds the tail (the last iteration just gets a smaller <code>vl</code>), so
+  there is <strong>no separate scalar tail</strong>. It is <strong>bit-for-bit identical</strong> to the
+  scalar oracle, <strong>hardware-validated on cfarm95</strong> — see the fusion and soundness
+  notes below.</li>
+<li>The generators live in a <strong>separate Go module</strong>
+  (<code>internal/kernels/asmgen/go.mod</code>, requiring <code>go-asmgen</code>), so the FFT library
+  itself keeps <strong>zero third-party dependencies</strong>. <code>go generate</code> (or the per-arch
+  CI job) regenerates the committed <code>.s</code> and CI fails if it is stale.</li>
+</ul>
+<h3 id="bit-identity-decides-which-arches-ship-a-kernel-correctness-over-coverage">Bit-identity decides which arches ship a kernel (correctness over coverage)<a class="headerlink" href="#bit-identity-decides-which-arches-ship-a-kernel-correctness-over-coverage" title="Permanent link">&para;</a></h3>
+<p>The contract is bit-for-bit equality with the scalar oracle, and <strong>which
+floating-point form the gc compiler gives the oracle differs by arch</strong>:</p>
+<ul>
+<li><strong>amd64</strong>: <code>GOAMD64=v1</code> does <strong>not</strong> fuse, so the oracle is separately-rounded
+  multiplies + a rounded add/sub. SSE2 <code>MULPD</code>/<code>ADDPD</code> reproduce that exactly →
+  bit-identical.</li>
+<li><strong>arm64</strong>: FMA is baseline, so the gc compiler <strong>fuses the oracle itself</strong>
+  (<code>FMSUBD</code> for <code>ar·br − ai·bi</code>, <code>FMADDD</code> for <code>ar·bi + ai·br</code>; verified by
+  disassembling <code>CMulScalar</code> with <code>-gcflags=-S</code>). A NEON kernel is bit-identical
+  <strong>only if it reproduces that same fusion</strong> — which it does: each product is
+  accumulated into a zeroed register with <code>VFMLA</code> (adding <code>+0.0</code> leaves the
+  product's rounding unchanged, matching the oracle's <code>FMULD</code>), and the second
+  term is folded in with <code>VFMLS</code>/<code>VFMLA</code> (the fused subtract/add the oracle
+  performs). The lesson is <strong>fusion is matched, not avoided</strong> — a non-fused NEON
+  kernel, or one whose fusion form differed, diverges by up to <strong>1 ULP</strong>, caught
+  by the random SIMD-vs-scalar test (Go's arm64 assembler exposes no non-fused
+  vector multiply — there is no <code>VFMUL</code> — so matching the fused form is the only
+  sound option anyway).</li>
+<li><strong>s390x</strong>: FMA is baseline and — uniquely among the four qemu-only targets —
+  the Go assembler exposes 2-wide double-precision vector FMA. The gc compiler
+  fuses the oracle (<code>FMUL</code> then <code>FMSUB</code>/<code>FMADD</code>; verified by disassembly), and the
+  <strong>vector-facility</strong> kernel reproduces that fusion two-lane (<code>VFMDB</code> for the
+  exactly-rounded product, <code>VFMSDB</code>/<code>VFMADB</code> for the fused subtract/add), with
+  <code>VL</code>/<code>VMRHG</code>/<code>VMRLG</code>/<code>VST</code> deinterleaving and re-interleaving the complex pairs.
+  s390x is the project's <strong>only big-endian</strong> target, so its per-arch qemu job
+  proving the kernel bit-identical (correct lane order included) is the
+  highest-value validation in the suite. <strong>Ships a kernel.</strong> ✅</li>
+<li><strong>riscv64</strong>: FMA is baseline, so the gc compiler <strong>fuses the oracle</strong>
+  (<code>FMULD</code> then <code>FNMSUBD</code> for <code>ar·br − ai·bi</code>; <code>FMULD</code> then <code>FMADDD</code> for
+  <code>ar·bi + ai·br</code>; verified by disassembling <code>CMulScalar</code> with
+  <code>GOARCH=riscv64 -gcflags=-S</code>). The <strong>RVV 1.0</strong> kernel reproduces that fusion
+  <code>vl</code>-wide — <code>VFMUL.VV</code> for each exactly-rounded product, then <code>VFNMSAC.VV</code>
+  (<code>vd = −(vs1·vs2)+vd</code>) and <code>VFMACC.VV</code> (<code>vd = +(vs1·vs2)+vd</code>) for the fused
+  subtract/add — the precise RVV analogue of the arm64 NEON kernel. <strong>Crucially,
+  the V extension is OPTIONAL on riscv64</strong>, so unlike the other three SIMD arches
+  <code>cmulSIMD</code> <strong>detects V at run time</strong> (parsing <code>/proc/cpuinfo</code>'s isa string) and
+  calls the RVV kernel only when V is present; on a non-V CPU it falls back to
+  scalar (calling <code>VSETVLI</code> there would SIGILL). The kernel is
+  <strong>hardware-validated bit-identical on cfarm95</strong> (GCC Compile Farm: a SpacemiT
+  X60, RVA22 + RVV 1.0), where the SIMD-vs-scalar test <strong>runs and passes</strong> on
+  structured and random inputs across a length sweep. Under CI's <strong>non-V</strong>
+  <code>qemu-riscv64</code> the scalar path is taken and the SIMD test <strong>skips</strong> its RVV
+  comparison (<code>t.Skip("no RVV")</code>), so CI stays green and the RVV instructions
+  never execute there. <strong>Ships a kernel (hardware-validated).</strong> ✅</li>
+<li><strong>loong64 / ppc64le</strong>: keep the <strong>validated scalar path</strong>, each for a
+  concrete, checked reason — NOT for lack of trying:</li>
+<li><strong>loong64</strong>: the Go loong64 assembler exposes LSX vector <strong>floating-point
+    only as unary ops</strong> (<code>VFSQRTD</code>, <code>VFRINTD</code>, <code>VFRECIPD</code>, …) — there is no vector
+    float add/multiply/FMA to build a complex product from, so a bit-identical
+    vector kernel is <strong>not expressible</strong>.</li>
+<li><strong>ppc64le</strong>: the Go ppc64 assembler exposes <strong>no vector double arithmetic</strong>
+    (the VSX surface is loads/stores, logicals, permutes, conversions —
+    <code>XVMADDDP</code>/<code>XVMULDP</code>/<code>XVADDDP</code> are not assemblable), so likewise no
+    bit-identical vector kernel is expressible.</li>
+</ul>
+<p>Per "on n'a pas le droit de se tromper", a 1-ULP-different kernel is a
+  correctness divergence the project rejects; partial-arch SIMD with identical
+  results beats full-arch SIMD with a divergence.</p>
+<h3 id="measured-perf-honest-delta">Measured perf (honest delta)<a class="headerlink" href="#measured-perf-honest-delta" title="Permanent link">&para;</a></h3>
+<p>On Apple-silicon arm64 the Go compiler's scalar loop reaches ~48 GB/s (L1) and
+<strong>out-runs</strong> the hand-written 2-wide NEON kernel at this width (measured ~3×
+slower; the <code>VLD2</code>/<code>VST2</code> deinterleave dominates). amd64 SSE2 is similar. So even
+where a kernel is bit-identical, routing the hot path through it would be a
+regression. The dispatch (<code>CMul</code>) therefore keeps the scalar implementation on
+the hot path; each SIMD kernel is retained as a per-arch-validated artifact and
+the reference for future <strong>wider</strong> kernels (AVX2/AVX-512, or arm64 SVE / unrolled
+NEON), where a win is plausible. Benchmarks: <code>BenchmarkCMulScalar*</code> vs
+<code>BenchmarkCMulSIMD*</code>.</p>
+<h3 id="split-ci-coverage-policy">Split CI + coverage policy<a class="headerlink" href="#split-ci-coverage-policy" title="Permanent link">&para;</a></h3>
+<p>CI is split into a <strong>pure-Go coverage gate</strong> and <strong>per-arch execution jobs</strong>,
+mirroring the go-asmgen org:</p>
+<ul>
+<li>The <code>test</code> gate builds, vets, race-tests, and enforces <strong>100% statement
+  coverage</strong> of the portable core. It runs on amd64 (ubuntu/windows) and arm64
+  (macos); on each host exactly one <code>cmulSIMD</code> wrapper compiles and is exercised
+  by the SIMD-vs-scalar test, so the gate reaches 100% without excluding any
+  reachable line.</li>
+<li>The generated <code>.s</code> carries <strong>no Go statements</strong> (it cannot be statement-
+  covered), so it is validated by the per-arch jobs: <code>arch-native</code> (amd64/arm64)
+  regenerates the committed assembly and fails if stale, then vet (asmdecl
+  cross-checks <code>name+offset(FP)</code>), build (<code>cmd/asm</code> encodes the mnemonics), and
+  <strong>runs</strong> the suite whose <code>TestCMul*</code> assert SIMD == scalar bit-for-bit;
+  <code>arch-qemu</code> runs riscv64/loong64/ppc64le/s390x under qemu-user (s390x is the
+  big-endian guard; riscv64's RVV <code>.s</code> is regen-checked there but runs scalar,
+  since that qemu CPU lacks V — the RVV bit-identity proof is run on real
+  hardware, cfarm95).</li>
+</ul>
+<p>Every line is either statement-covered by the gate or executed by a per-arch
+job; the gate is never lowered and there is no coverage-gaming knob.</p>
+<h3 id="progress">Progress<a class="headerlink" href="#progress" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>amd64 (SSE2)</strong> — bit-identical SIMD kernel, validated by the native job. ✅</li>
+<li><strong>arm64 (NEON)</strong> — bit-identical 2-wide SIMD kernel, validated by the native
+  job (reproduces the oracle's <code>FMSUBD</code>/<code>FMADDD</code> fusion). ✅</li>
+<li><strong>s390x (vector facility)</strong> — bit-identical 2-wide SIMD kernel
+  (<code>VFMDB</code>/<code>VFMSDB</code>/<code>VFMADB</code> reproducing the oracle's fused <code>FMSUB</code>/<code>FMADD</code>),
+  validated by the qemu-s390x job on the project's only <strong>big-endian</strong> target. ✅</li>
+<li><strong>riscv64 (RVV 1.0)</strong> — bit-identical strip-mined SIMD kernel (<code>VLSEG2E64V</code> +
+  <code>VFMUL.VV</code>/<code>VFNMSAC.VV</code>/<code>VFMACC.VV</code> reproducing the oracle's fused
+  <code>FNMSUBD</code>/<code>FMADDD</code>), with <strong>run-time V detection</strong>, <strong>hardware-validated on
+  cfarm95</strong> (SpacemiT X60, RVV 1.0); under CI's non-V qemu it runs scalar and the
+  SIMD test skips. ✅</li>
+<li><strong>loong64 / ppc64le</strong> — validated scalar fallback (qemu jobs); no SIMD kernel,
+  each for a concrete checked reason (no assemblable vector double arithmetic in
+  the Go assembler — see above). 🔒</li>
+</ul>
+<h3 id="remaining">Remaining<a class="headerlink" href="#remaining" title="Permanent link">&para;</a></h3>
+<ul>
+<li>loong64/ppc64le SIMD await Go-assembler support for vector double arithmetic
+  (or a different, still bit-identical formulation). riscv64 RVV is <strong>done</strong> —
+  hardware-validated on cfarm95; a future improvement would be an RVV-capable CI
+  runner so the bit-identity proof also runs in CI (today it runs scalar there
+  and the proof is on real hardware).</li>
+<li>Wider kernels (amd64 AVX2/AVX-512, arm64 SVE / unrolled NEON, multiple complex
+  per iteration) and a measurement to decide if/when to route <code>CMul</code> through SIMD
+  on the hot path.</li>
+<li>A bit-identical vectorized butterfly (<code>Radix2</code> inner loop) once the pointwise
+  multiply is solid across arches.</li>
+</ul>
+<h2 id="phase-5-ruby-binding-done">Phase 5 — Ruby binding — DONE<a class="headerlink" href="#phase-5-ruby-binding-done" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Exposed through
+  <a href="https://github.com/go-embedded-ruby/ruby">go-embedded-ruby</a> as an <code>FFT</code>
+  module, so Ruby gets a cgo-free FFT matching the <code>numpy.fft</code> / <code>scipy.fft</code>
+  surface: <code>fft</code>/<code>ifft</code>/<code>rfft</code>/<code>irfft</code>, the N-D and 2-D transforms
+  (<code>fftn</code>/<code>ifftn</code>/<code>fft2</code>/<code>ifft2</code>), the bin-frequency helpers
+  (<code>fftfreq</code>/<code>rfftfreq</code>), the window functions
+  (<code>hann</code>/<code>hamming</code>/<code>blackman</code>/<code>blackman_harris</code>/<code>bartlett</code>), and the spectral
+  helpers (<code>psd</code>/<code>spectrogram</code>). Spectra are returned as Ruby <code>Complex</code> values.
+  The binding required a Ruby <code>Complex</code> type and the <code>::</code> scope operator, both
+  added to go-embedded-ruby; it is differentially validated against the
+  <code>numpy.fft</code> conventions and held to the same 100%-coverage gate.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.top", "navigation.instant", "content.code.copy", "search.suggest"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.88dd0f4e.min.js"></script>
+      
+    
+  </body>
+</html>
