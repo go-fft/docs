@@ -1,442 +1,217 @@
 # Performance
 
-`go-fft` is benchmarked head-to-head against the two reference implementations
-that matter:
+`go-fft` is benchmarked head-to-head against the implementations that matter:
 
+* **FFTW** — native **fftw-3.3.11** (Homebrew arm64 bottle, NEON, linked from C) —
+  the absolute C gold standard, single-threaded.
+* **pocketfft** via **`numpy.fft` 2.5.0** and **`scipy.fft` 1.18.0** — the other
+  hand-tuned C reference, single-threaded.
 * **[`gonum.org/v1/gonum/dsp/fourier`](https://pkg.go.dev/gonum.org/v1/gonum/dsp/fourier)**
-  — the fairest comparison: the other pure-Go (`CGO_ENABLED=0`) FFT for Go.
-  go-fft beats it at every size.
-* **FFTW / pocketfft** via `numpy.fft` and `scipy.fft` (C, hand-tuned SIMD) —
-  the absolute gold standard, and single-threaded. A pure-Go library is not
-  expected to beat hand-written C+SIMD on a single core, but go-fft now **wins
-  outright at several shapes** (large 1-D, large 2-D, and the small-N rows) and
-  the remaining gaps are quantified honestly below.
+  v0.16.0 — the fairest comparison: the other pure-Go (`CGO_ENABLED=0`) FFT for Go.
+  go-fft beats it at **every** size.
 
-All transforms are differentially validated against an O(N²) naive-DFT oracle
-and a full round-trip suite, so every number below is for a *correct* transform.
+Numerical correctness is gated first: every go-fft transform is checked against
+`numpy.fft` within `rtol=1e-9, atol=1e-7` before any timing is reported, so every
+number below is for a *correct* transform.
 
-## How to reproduce
-
-The head-to-head Go benchmark vs gonum lives in its own module (`bench/`) so the
-library itself stays dependency-free — `gonum` is never pulled into the library
-`go.mod`:
-
-```sh
-cd bench
-go test -run=^$ -bench=. -benchmem
-```
-
-The FFTW/pocketfft comparison runs on one Linux host so the silicon is held
-constant: the Go matrix `BenchmarkH2H*` (in `h2h_test.go`) and the matching
-Python script `scripts/fftbench.py` exercise the *same* transforms, sizes, and
-2-D shapes.
-
-```sh
-go test -run=^$ -bench=H2H -count=3 .      # go-fft
-python3 scripts/fftbench.py                # numpy.fft + scipy.fft
-```
+> The full methodology, every size, GFLOP/s, the before→after tables for each
+> optimization round, and the per-op action items live in
+> **[BENCHMARKS.md](https://github.com/go-fft/fft/blob/main/BENCHMARKS.md)** in the
+> library repo. Reproduce the whole sweep with `benchmarks/run.sh` (go-fft + gonum
+> via `go test -bench`, native FFTW via a C harness, numpy/scipy via Python;
+> correctness-gated; gonum is isolated in a separate `benchmarks/` module so the
+> library stays dependency-free).
 
 ## Method
 
-* go-fft is measured through its cached `Plan` API (`NewPlan(n).FFT`,
-  `NewRealPlan(n).RFFT`), the apples-to-apples match for gonum's reused plan
-  object and FFTW/pocketfft's reused plan: twiddle factors are built once and
-  amortized across calls, so each number is the steady-state transform cost.
-* ns/op is best-of-3, lower is better. The numpy/scipy numbers include the
-  Python-call overhead (≈1–2 µs fixed per call), which dominates the small-N
-  rows; the large-N and 2-D rows, where that overhead is amortized, are the
-  like-for-like kernel comparison.
-* Size taxonomy: powers of two (64 … 65536), highly-composite N (1000 = 2³·5³,
-  1296 = 2⁴·3⁴), primes (2017, 9973, 10007 — the algorithm's worst case), and
-  2-D shapes (where the multicore path applies).
-* Hardware: a 4-core arm64 Linux host (same box for both sides). go-fft and the
-  numpy/scipy script are run back-to-back so they share the machine state; ns/op
-  is best-of-N (lower is better), the convention both sides use.
+* **Machine**: Apple M4 Max (16-core: 12P+4E), macOS 26.5, arm64.
+* **Toolchains**: go1.26.4 darwin/arm64; native FFTW fftw-3.3.11; numpy 2.5.0 /
+  scipy 1.18.0 (pocketfft); pyfftw 0.15.1; gonum v0.16.0.
+* **Single-threaded** for the apples-to-apples core comparison: FFTW planned with
+  `threads=1`; numpy/scipy pinned to one thread (`OMP_NUM_THREADS=1` …,
+  `workers=1`); Go benchmarks are single-goroutine for 1-D. The 2-D rows are the
+  one place go-fft uses its multicore path (the others are all 1-core).
+* **Plan reuse / steady state**: go-fft via its cached `Plan` API
+  (`NewPlan(n).FFT`, `NewRealPlan(n).RFFT`); gonum via its reused object; FFTW via
+  a reused `FFTW_MEASURE` plan; scipy via its internal plan cache. Each number is
+  the **steady-state transform** cost, not planning.
+* ns/op (lower is better); ratio = go-fft ÷ FFTW (≤ 1.05 = parity). GFLOP/s uses
+  the standard `5·N·log2(N)` convention (real rfft counted at half; 2-D at total
+  points).
 
-## go-fft vs FFTW / pocketfft (4-core arm64, same host, ns/op)
+## Algorithm
 
-### Complex FFT
+`go-fft` uses a **split-radix** kernel for powers of two (≈⅓ fewer real multiplies
+than radix-4), **mixed-radix Cooley–Tukey** for the other highly-composite lengths
+(radix-2/3/4/5 straight-line butterflies plus a general radix-p kernel for small
+primes), **Rader's algorithm** for primes (from N=700) and **Bluestein's chirp-z**
+otherwise, with all twiddle factors cached per length.
 
-| N | go-fft | numpy.fft | scipy.fft | verdict |
+## Complex 1-D FFT (`complex128`)
+
+ns/op (GFLOP/s). Ratio = go-fft ÷ FFTW (lower is better; ≤ 1.05 = parity).
+
+| N | go-fft | FFTW | numpy.fft | scipy.fft | gonum | go/FFTW | verdict |
+|---:|---:|---:|---:|---:|---:|---:|:--|
+| 256 (2⁸) | 716 (14.3) | 419 (24.4) | 2 828 | 2 302 | 3 272 | 1.71× | lags FFTW 1.71× |
+| 1 024 (2¹⁰) | 3 395 (15.1) | 2 127 (24.1) | 5 678 | 4 470 | 20 066 | 1.60× | lags FFTW 1.60× |
+| 4 096 (2¹²) | 16 383 (15.0) | 11 064 (22.2) | 20 359 | 16 148 | 80 164 | 1.48× | lags FFTW 1.48× |
+| 65 536 (2¹⁶) | 377 784 (13.9) | 322 850 (16.2) | 554 088 | 499 500 | 1 901 025 | 1.17× | lags FFTW 1.17× |
+| 1 048 576 (2²⁰) | 13 355 742 (7.9) | 8 171 156 (12.8) | 11 044 400 | 8 040 680 | 41 139 865 | 1.63× | lags FFTW 1.63× |
+| 1 000 (2³·5³) | 5 850 (8.5) | 2 478 (20.1) | 6 075 | 4 961 | 16 541 | 2.36× | lags FFTW 2.36× |
+| 1 080 (2³·3³·5) | 6 802 (8.0) | 2 466 (22.1) | 6 799 | 5 266 | 21 183 | 2.76× | lags FFTW 2.76× |
+| 1 920 (2⁷·3·5) | 12 516 (8.4) | 4 340 (24.1) | 11 349 | 9 059 | 36 810 | 2.88× | lags FFTW 2.88× |
+| 1 009 (prime) | 17 214 (2.9) | 13 668 (3.7) | 31 560 | 19 004 | 563 199 | 1.26× | lags FFTW 1.26× |
+| 1 296 (2⁴·3⁴) | 9 818 (6.8) | 2 998 (22.4) | 8 063 | 6 364 | 25 328 | 3.28× | lags FFTW 3.28× |
+| 10 007 (prime) | 369 217 (1.8) | 171 553 (3.9) | 321 309 | 276 031 | 75 674 509 | 2.15× | lags FFTW 2.15× |
+
+## Real 1-D RFFT (`float64` → `complex128`, N/2+1 bins)
+
+| N | go-fft | FFTW | numpy.rfft | scipy.rfft | gonum | go/FFTW | verdict |
+|---:|---:|---:|---:|---:|---:|---:|:--|
+| 256 (2⁸) | 525 (9.8) | 220 (23.3) | 2 432 | 2 422 | 1 882 | 2.39× | lags FFTW 2.39× |
+| 1 024 (2¹⁰) | 2 289 (11.2) | 1 000 (25.6) | 4 180 | 3 726 | 8 998 | 2.29× | lags FFTW 2.29× |
+| 4 096 (2¹²) | 10 320 (11.9) | 4 890 (25.1) | 11 742 | 10 416 | 39 264 | 2.11× | lags FFTW 2.11× |
+| 65 536 (2¹⁶) | 230 167 (11.4) | 143 040 (18.3) | 230 189 | 254 964 | 896 439 | 1.61× | lags FFTW 1.61× |
+| 1 048 576 (2²⁰) | 4 465 650 (11.7) | 2 958 859 (17.7) | 4 392 782 | 6 365 402 | 18 259 818 | 1.51× | lags FFTW 1.51× |
+| 1 000 (2³·5³) | 3 144 (7.9) | 1 176 (21.2) | 4 289 | 3 663 | 8 604 | 2.67× | lags FFTW 2.67× |
+| 1 080 (2³·3³·5) | 3 616 (7.5) | 1 131 (24.1) | 4 426 | 4 196 | 9 933 | 3.20× | lags FFTW 3.20× |
+| 1 920 (2⁷·3·5) | 6 555 (8.0) | 2 189 (23.9) | 6 188 | 5 657 | 17 156 | 2.99× | lags FFTW 2.99× |
+
+The forward r2c packs N reals into an N/2-point complex FFT and untangles. The
+**pack/untangle round** made that pass allocation-free (a pooled working set,
+0 alloc/op steady-state on the power-of-two path) and branchless/vectorizable,
+cutting the forward mid-range time **1.5–1.65×** and the FFTW gap from **~3.3–3.9×
+down to ~2.1–2.4×**. The **fused-pack round** then folded the real-pair packing
+into the iterative kernel's bit-reversal gather, removing one O(N) pass and the
+intermediate buffer (~1.2–1.7× faster on the pack/gather portion at N=256…4096,
+bit-identical output). A full real split-radix kernel (Sorensen RVFFT) was
+implemented, validated bit-exact, benchmarked, and **reverted** (a 2–10×
+regression — a scalar real-split-radix abandons the SIMD, cache-friendly complex
+engine the packed path reuses). The residual forward gap is FFTW's
+codelet-scheduled Hermitian real kernel.
+
+## Real inverse 1-D IRFFT (`complex128` N/2+1 bins → `float64`)
+
+The c2r inverse now mirrors the forward packing: it reverses the untangle to
+recover the N/2-point packed spectrum, runs **one N/2-point inverse complex FFT**,
+and unpacks — half the arithmetic and memory traffic of the previous full
+length-N conjugate-symmetric inverse. ns/op (GFLOP/s). Ratio = go-fft ÷ FFTW.
+
+| N | go-fft | FFTW (c2r) | go/FFTW | verdict |
 |---:|---:|---:|---:|:--|
-| 64 | **291** | 2 274 | 1 824 | **go-fft wins ~6.3×** (small-N) |
-| 256 | **1 363** | 2 863 | 2 325 | **go-fft wins** (small-N) |
-| 1024 | 7 249 | 5 478 | 4 421 | pocketfft ~1.6× → **go-fft now wins**, see iterative round |
-| 4096 | 30 612 | 17 462 | 14 188 | pocketfft ~2.2× → **tie**, see iterative round |
-| 65536 | **540 292** | 1 348 290 | 1 204 171 | **go-fft wins ~2.2×** |
-| 1000 (2³·5³) | 5 784 | 5 662 | 4 511 | pocketfft ~1.3× |
-| 1296 (2⁴·3⁴) | 9 735 | 6 847 | 5 664 | pocketfft ~1.7× |
-| 769 (prime) | 14 510 | — | 12 978 | **~1.12×** (was ~3.1×) — Rader round |
-| 2017 (prime) | **37 775** | 59 663 | 37 244 | **~parity (1.01×)** (was ~2.4×) — Rader round |
-| 5003 (prime) | 194 392 | — | 83 422 | FFTW ~2.3× — conv pad 10125→10080 (picker round) |
-| 9973 (prime) | 359 100 | 353 154 | 222 076 | FFTW ~1.6× — conv pad 20000 (unchanged) |
-| 10007 (prime) | 371 383 | 282 924 | 225 605 | FFTW ~1.6× — conv pad 20250→20160 (picker round) |
+| 256 (2⁸) | 797 (6.4) | 253 (20.2) | 3.15× | lags FFTW 3.15× |
+| 1 024 (2¹⁰) | 3 517 (7.3) | 1 184 (21.6) | 2.97× | lags FFTW 2.97× |
+| 4 096 (2¹²) | 16 749 (7.3) | 5 526 (22.2) | 3.03× | lags FFTW 3.03× |
+| 65 536 (2¹⁶) | 351 731 (7.5) | 155 132 (16.9) | 2.27× | lags FFTW 2.27× |
+| 1 048 576 (2²⁰) | 5 062 003 (10.4) | 3 329 422 (15.7) | 1.52× | lags FFTW 1.52× |
+| 1 000 (2³·5³) | 4 659 (5.3) | 1 220 (20.4) | 3.82× | lags FFTW 3.82× |
+| 1 080 (2³·3³·5) | 4 770 (5.7) | 1 341 (20.3) | 3.56× | lags FFTW 3.56× |
+| 1 920 (2⁷·3·5) | 8 786 (5.5) | 2 253 (23.0) | 3.90× | lags FFTW 3.90× |
 
-### Real RFFT
+The **real-inverse round** replaced the old full-length conjugate-symmetric
+inverse (≈2× the work the real symmetry requires) with this half-length packed
+inverse, which **roughly halves the c2r time at every size** (1.74–2.66×, the
+real-symmetry 2× realized) and cut the FFTW c2r gap from **~3.6–8.3× down to
+~1.5–3.9×**. Correctness is held: `IRFFT(RFFT(x), len(x)) ≈ x` round-trips, the
+DC/Nyquist bins reconstruct exactly, and odd N still routes to the full
+conjugate-mirror inverse.
 
-| N | go-fft | numpy.rfft | scipy.rfft | verdict |
-|---:|---:|---:|---:|:--|
-| 64 | **254** | 2 129 | 1 886 | **go-fft wins ~7.4×** (small-N) |
-| 256 | **1 019** | 2 639 | 2 293 | **go-fft wins ~2.3×** (small-N) |
-| 1024 | 3 824 | 4 252 | 3 621 | **~parity (1.06×)** (was ~1.9×) — paired untangle |
-| 2048 | 7 575 | — | 5 419 | pocketfft ~1.40× |
-| 4096 | 15 787 | 11 759 | 9 772 | pocketfft ~1.62× (was ~2.7×) |
-| 65536 | **272 560** | 276 281 | 300 164 | **go-fft wins ~1.10×** (was ~2.1×) |
-| 1000 | 5 732 | 5 041 | 4 199 | pocketfft ~1.4× |
-| 1296 | 8 181 | 5 722 | 4 963 | pocketfft ~1.7× |
+## 2-D complex FFT2 (`complex128`, multicore)
 
-### 2-D complex FFT2 (multicore)
+go-fft fans the independent 1-D row/column transforms across goroutines above a
+work-size threshold; FFTW / numpy / scipy are single-threaded here. This is where
+a pure-Go library decisively beats single-threaded C. ns/op (GFLOP/s).
 
-numpy.fft / pocketfft are single-threaded; go-fft fans the independent row/column
-1-D transforms of a 2-D FFT out across goroutines above a work-size threshold.
-This is where a pure-Go library can decisively beat single-threaded C.
+| shape | go-fft | FFTW | numpy.fft2 | scipy.fft2 | go/FFTW | verdict |
+|:--|---:|---:|---:|---:|---:|:--|
+| 64×64 | 29 022 (8.5) | 9 064 (27.1) | 19 895 | 14 005 | 3.20× | lags FFTW 3.20× (below parallel threshold) |
+| 128×128 | 78 984 (14.5) | 56 858 (20.2) | 76 859 | 64 707 | 1.39× | lags FFTW 1.39× |
+| 256×256 | 208 437 (25.2) | 271 098 (19.3) | 359 158 | 207 601 | 0.77× | **≥ parity** |
+| 512×512 | 633 920 (37.2) | 1 247 215 (18.9) | 1 697 966 | 964 884 | 0.51× | **beats all** |
+| 1024×1024 | 2 784 623 (37.7) | 6 301 688 (16.6) | 9 211 551 | 5 315 022 | 0.44× | **beats all** |
 
-| shape | go-fft | numpy.fft2 | scipy.fft2 | verdict |
-|:--|---:|---:|---:|:--|
-| 64×64 | 66 519 | 21 484 | 15 834 | scipy ~4.2× (below the parallel threshold) |
-| 128×128 | 302 201 | 80 553 | 66 859 | scipy ~4.5× |
-| 256×256 | 933 034 | 725 341 | 555 908 | scipy ~1.7× |
-| 512×512 | 2 598 623 | 2 962 278 | 2 421 166 | **go-fft beats numpy; ~tie with scipy** |
-| 1024×1024 | **9 622 944** | 12 050 524 | 9 837 828 | **go-fft wins both** |
+## Plan / setup cost (built once, then amortized)
 
-**Honest read.** go-fft now **wins outright** at: every small-N row (where the
-Python FFI tax dominates the C kernels), large 1-D complex N = 65536 (~2.2–2.9×
-faster than scipy on the same core), large 2-D (1024×1024 beats both numpy
-and scipy; 512×512 beats numpy and ties scipy) thanks to the multicore path, and
-— after the **iterative round** (see below) — the **mid-range complex** band that
-was the last loss: N=1024 now wins (~1.48×) and N=2048/4096 tie pocketfft on the
-same core. The split-radix round (below) shrank the remaining gaps before that:
-the **mid-range complex** gap narrowed (1024: ~1.8×→~1.6×; 4096 stayed ~2.2×
-until the iterative round closed it), the **real mid-range** gap roughly halved (1024:
-~1.9×→~1.2×; 4096: ~2.7×→~1.9×; 65536: ~2.1×→~1.3×) because the real path's
-half-length complex FFT now rides the split-radix kernel and skips a copy, and
-the **prime** gap fell from ~2.9–4.9× to ~2.4–2.9× (the prime engines convolve
-with the now-faster pow2 FFTs, and the Bluestein→Rader crossover dropped from
-N=4500 to N=700). The **Rader-convolution + real-untangle round** (below) then
-took the primes whose N−1 is *smooth* to parity — **2017 at 1.01× and 769 at
-~1.12×** via a direct length-(N−1) cyclic convolution and a specialized radix-7
-butterfly — roughly halved the rest (9973/10007 to ~1.6×, 5003 to ~2.3×) with a
-2·3·5-smooth convolution pad, and brought **real 1024 to parity and real 65536 to
-a win** with a paired conjugate-symmetric untangle. The honest residual losses are
-now: the primes whose N−1 has a medium/large prime factor (5003 ~2.3×, 9973/10007
-~1.6× — FFTW's codelet-fused length-(N−1) convolution), the real mid-range
-2048/4096 (~1.4–1.6× — pocketfft's dedicated Hermitian real kernel), and the
-non-power-of-two composites 1000/1296 (~1.4–1.7× — the recursive mixed-radix
-engine's recursion tax). Each is mapped to its exact FFTW technique and pure-Go
-lever in **Remaining gap** below. Where go-fft wins or ties (small-N, complex
-mid-range, large 1-D, large 2-D, smooth-N−1 primes, real 1024/65536) the tables
-above show it.
+Steady-state transforms above reuse a plan. This is the one-time construction
+cost (ns). go-fft and gonum build twiddle tables in Go; FFTW's `FFTW_MEASURE`
+*times trial transforms* to pick codelets, so its planning is orders of magnitude
+more expensive — the price of its steady-state speed, paid back only across many
+reuses.
 
-## What made go-fft fast (split-radix round, before → after)
+| N | go-fft NewPlan | gonum NewCmplxFFT | FFTW FFTW_MEASURE |
+|---:|---:|---:|---:|
+| 256 | 3 762 | 2 473 | 1 685 000 |
+| 1 024 | 14 808 | 9 285 | 3 434 000 |
+| 4 096 | 60 228 | 32 714 | 11 604 000 |
+| 65 536 | 1 094 262 | 464 499 | 353 280 000 |
+| 1 048 576 | 19 298 901 | 6 429 831 | 3 860 636 000 |
+| 1 000 | 7 184 | 8 926 | 5 765 000 |
+| 1 080 | 7 460 | 9 917 | 14 182 000 |
+| 1 920 | 13 310 | 17 266 | 25 377 000 |
+| 1 009 | 34 376 | 10 674 | 33 948 000 |
+| 1 296 | 8 928 | 11 556 | 11 156 000 |
+| 10 007 | 993 365 | 100 654 | 189 451 000 |
 
-Each optimization was kept only after measuring a win on the same host and
-re-passing the full differential correctness suite (incl. big-endian s390x and
-ppc64le and riscv64/loong64 under qemu).
+## Honest read
 
-0a. **Split-radix power-of-two engine.** Every pure power of two now takes a
-   dedicated split-radix kernel instead of the general mixed-radix one. Split-radix
-   computes the same DFT with ≈⅓ fewer real multiplies — one half-length DFT of
-   the even samples plus two quarter-length DFTs of the ≡1 and ≡3 mod 4 samples,
-   recombined by an L-shaped butterfly needing only W_N^k and W_N^{3k} — which is
-   pocketfft's mid-range advantage. A hardcoded radix-4 leaf (roots all ±1/±i, no
-   twiddles) terminates the recursion two levels early; that is what turns the
-   lower operation count into a measured wall-clock win. Split-radix vs the prior
-   mixed-radix engine, isolated A/B on the benchmark host (ns/op, best-of):
+**vs gonum** (the fair pure-Go, CGO=0 peer): go-fft is faster at **every** size
+measured — typically 3–5× on composite N and an order of magnitude on primes
+(gonum falls back to a naive Bluestein with no Rader path; up to ~59× faster on
+primes). go-fft is the fastest pure-Go FFT here.
 
-   | N | mixed-radix | split-radix | delta |
-   |---:|---:|---:|---:|
-   | 1024 | 8 010 | 5 563 | −31% |
-   | 2048 | 21 028 | 14 382 | −32% |
-   | 4096 | 40 253 | 34 191 | −15% |
-   | 8192 | 93 706 | 78 149 | −17% |
-   | 16384 | 162 693 | 150 193 | −8% |
-   | 65536 | 787 040 | 716 772 | −9% |
+**vs pocketfft** (numpy/scipy): go-fft wins the small-N rows outright (the Python
+FFI tax dominates pocketfft's C kernel there) and is competitive-to-winning at
+large 1-D and large 2-D; the residual losses are the mid-range single-core bands.
 
-0b. **Free prime + real speedups from 0a.** The Rader/Bluestein prime engines
-   convolve with these pow2 FFTs, so they got faster for nothing (10007:
-   ~1.13 ms → ~0.85 ms before the threshold retune below). The even-N real
-   transform packs into a half-length complex buffer that is itself a pow2, so it
-   rides the same kernel; feeding the freshly packed buffer straight to the
-   split-radix kernel as its scratch also drops a copy and an allocation (RFFT
-   3 → 2 allocs/op for pow2), giving real 1024: 8 750 → 4 524 ns and real 4096:
-   33 029 → 19 462 ns vs the pre-round baseline.
+**vs FFTW** (the C gold standard): go-fft **wins outright** at the large 2-D
+multicore shapes (256×256 at parity, 512×512 and 1024×1024 beating all), and is
+within ~1.2–1.6× of FFTW on the large-prime rows relative to FFTW's own cost.
+FFTW still leads the single-core power-of-two and smooth-composite mid-range — it
+has hand-written SIMD codelets and a dedicated Hermitian real kernel. go-fft's
+butterflies are now SIMD too (routed SSE2 on amd64 — **1.34–1.43× faster** than
+the scalar stage there; gc-autovectorized NEON on arm64), but FFTW's codelet
+generator and r2c real kernel remain ahead on one core. **The framing is honest:
+mixed-radix + plans beats gonum everywhere and is comparable to FFTW at scale.**
 
-0c. **Bluestein → Rader crossover lowered to N = 700.** Because 0a sped up the
-   shared pow2 convolution, the measured crossover where Rader (no chirp
-   pre/post-multiply, direct length-(N−1) convolution) beats Bluestein dropped
-   from N = 4500 to N ≈ 700 (Bluestein still faster at N=641, Rader faster from
-   N=769 up). Re-routing the 769..4500 primes to Rader removes the residual
-   ~1.3–1.7× Bluestein overhead in that band:
+## Lagging ops — root cause + action items
 
-   | N | Bluestein | Rader |
-   |---:|---:|---:|
-   | 769 | 53 893 | **43 931** |
-   | 2017 | 114 977 | **86 771** |
-   | 5003 | 624 952 | **361 171** |
-   | 9973 | 1 405 512 | **657 107** |
+1. **Power-of-two & smooth-composite mid-range (256 … 4096, 1000/1080/1296/1920).**
+   *Root cause*: scalar Go butterflies vs FFTW's hand-written NEON SIMD codelets.
+   *Action taken (SIMD-butterfly round)*: the radix-2/radix-4 butterfly inner
+   loops were lifted into stage-granularity kernels behind a stable seam, with
+   go-asmgen generating a routed **SSE2 stage kernel on amd64** (measured
+   **1.34–1.43× faster** than the scalar stage there). On arm64/s390x the Go
+   assembler exposes vector float only as the FMA family (no vector
+   `VFADD`/`VFSUB`), so a hand kernel only **ties** the gc autovectorizer, which
+   already extracts the NEON throughput from the simple loop — so off amd64 the
+   hot path stays the autovectorized Go loop. The remaining gap to FFTW on arm64
+   is its real-FFT kernel and codelet scheduling (items 2–3), not raw complex-mul
+   SIMD.
+2. **Real mid-range (1024 … 65536).** *Root cause*: go-fft packs a real signal
+   into a half-length complex FFT and untangles once; FFTW runs a dedicated real
+   (r2c) kernel exploiting Hermitian symmetry at every stage (~2× less
+   arithmetic). *Action taken*: the **real-inverse round** packed the c2r inverse
+   symmetrically (reverse-untangle → N/2-point inverse FFT → unpack), roughly
+   halving the c2r time at every size and cutting the FFTW c2r gap from
+   **~3.6–8.3× to ~1.5–3.9×**; the **pack/untangle round** made the forward r2c
+   pass allocation-free and branchless, cutting the forward mid-range
+   **1.5–1.65×** and the FFTW gap from **~3.3–3.9× to ~2.1–2.4×**; the
+   **fused-pack round** banked a further ~1.2–1.7× on the pack/gather portion.
+   The deferred native real split-radix kernel (Sorensen RVFFT) was implemented,
+   validated bit-exact, benchmarked, and reverted (2–10× regression). The residual
+   needs a *SIMD, cache-blocked* real kernel, not a scalar real-FFT port.
+3. **Large primes (1009, 10007).** *Root cause*: Rader/Bluestein convolve at
+   length ≈N−1 on the recursive mixed-radix engine (~1.5× recursion tax); FFTW
+   convolves at exactly N−1 with codelet-fused mixed-radix. go-fft is already
+   **2–2.5× faster than gonum** here and within ~1.6× of FFTW. *Action*: an
+   iterative mixed-radix engine for the smooth convolution lengths (a substantial
+   new engine, lower priority than items 1–2).
+4. **Small 2-D (64×64, 128×128).** *Root cause*: below the parallel threshold, so
+   they run the serial per-line path while FFTW uses fused 2-D codelets. *Action*:
+   SIMD (item 1) lifts the per-line 1-D cost; the multicore path already makes
+   go-fft win at 512×512 and 1024×1024.
 
-## What made go-fft fast (iterative round, the mid-range frontier)
-
-The split-radix round closed the *operation-count* gap but left a *memory-schedule*
-gap: a recursive kernel revisits the data through a deep call tree, so the working
-set is never resident across frames. pocketfft instead runs an **iterative**
-kernel — one bit-reversal permutation, then log-N butterfly stages, each a single
-linear pass over the array, twiddles streamed in consumption order. This round
-ports that schedule to pure Go (`iterative.go`):
-
-* **Bit-reversal once, then radix-4 DIT stages.** log₂(N) is decomposed into
-  radix-4 stages (plus one leading radix-2 when log₂N is odd). Radix-4 halves the
-  number of passes over memory versus radix-2 — the dominant cost on a
-  memory-bound kernel.
-* **Per-stage twiddles laid out for sequential reads.** Each stage stores its
-  twiddles (radix-4: the triple W^k, W^{2k}, W^{3k}) contiguously in exactly the
-  order the stage consumes them, so the twiddle read is a linear scan, not a
-  strided gather into the size-N root table.
-* **No manual blocking — the compiler wins the long loop.** An explicit
-  cache-blocked inner loop (sweeping butterfly positions in L1-sized chunks across
-  groups) was implemented and measured, and it *lost* to leaving each stage as one
-  contiguous inner loop, most at the large sizes (N=65536: ~450 µs unblocked vs
-  ~480 µs blocked). The gc autovectorizer extracts more from the simple long loop
-  than from the fragmented blocked one — the same lesson the SIMD round taught. So
-  the win is the iterative *schedule*, not hand-blocking.
-
-The iterative kernel measured faster than the recursive split-radix engine at
-**every** power-of-two length, so `NewPlan` now routes all powers of two here
-(the split-radix engine stays as an independent, fully-tested validation oracle).
-Re-measured on the iterative-round host (4-core arm64 Linux, Go 1.26.4 — a
-slower box than the split-radix-round host above, so this section's numbers are
-internally consistent same-host before/after and *not* comparable cell-for-cell
-to the table above):
-
-A/B, split-radix → iterative, through the public plan path (ns/op, best-of-4):
-
-| N | split-radix | iterative | scipy.fft (same host) | verdict |
-|---:|---:|---:|---:|:--|
-| 1024 | 6 009 | **3 472** | 5 138 | **go-fft wins ~1.48×** (was scipy ~1.2×) |
-| 2048 | 12 744 | **8 692** | 8 481 | **tie** (was scipy ~1.5×) |
-| 4096 | 33 992 | **17 173** | 16 988 | **tie** (was scipy ~2.0×) |
-| 8192 | 70 918 | **48 993** | — | −31% |
-| 16384 | 132 806 | **93 481** | — | −30% |
-| 65536 | 567 421 | **398 962** | 1 173 917 | **go-fft wins ~2.9×** |
-
-The mid-range complex frontier documented as the last loss (~1.6–2.2× behind
-pocketfft) is **closed**: go-fft now wins outright at N=1024 and ties pocketfft at
-N=2048 and N=4096 on the same single core. The pow2 small-N rows (64, 256) and the
-real-input path (whose even-N transform packs into a half-length pow2 complex FFT)
-ride the same kernel and improved for free. This was a pure *schedule* win:
-identical operation count, no wider vectors — confirming the standing lesson that
-on this µ-arch the lever is memory layout the gc compiler can autovectorize, not
-hand-emitted SIMD.
-
-## What made go-fft fast (Rader-convolution + real-untangle round)
-
-This round attacked the two documented residual losses: the prime gap and the
-real mid-range. Each change was kept only after re-passing the full differential
-suite (naive-DFT oracle + round-trip + the split-radix/iterative oracles) on
-amd64 **and** big-endian s390x/ppc64le plus riscv64/loong64 under qemu, then
-re-measuring a win on the 4-core arm64 host back-to-back against scipy.fft.
-
-A. **Direct length-(N−1) cyclic Rader convolution for smooth N−1.** Rader's
-   prime-N transform is a *cyclic* convolution of length q = N−1. The old code
-   always zero-padded it to a power of two ≥ 2q−1 and ran a linear convolution.
-   But when q itself is smooth (all prime factors ≤ maxRadix) the cyclic
-   convolution can be evaluated *directly* at length q — `IFFT_q(FFT_q(a)·FFT_q(ker))`
-   — with no zero-pad. For these primes the pad was 2–3.3× larger than q
-   (N=769: q=768=2⁸·3 vs a 2048-point pad; N=2017: q=2016=2⁵·3²·7 vs 4096), so
-   convolving at q directly roughly halves the FFT work. This is FFTW's tuned
-   Rader path. Result: **769 ~3.1×→~1.12×, 2017 ~2.0×→parity (1.01×)**.
-
-B. **2·3·5-smooth (not power-of-two) pad for non-smooth N−1.** When q has a
-   medium/large prime factor (N=9973: q=9972=2²·3²·277; N=10007: q=10006=2·5003)
-   the direct length-q transform would itself be a Bluestein call, so the linear
-   convolution stays — but padded to the smallest **2·3·5-smooth** length ≥ 2q
-   instead of the next power of two. A 2·3·5-smooth pad rides only the specialized
-   radix-2/3/4/5 butterflies and is ~0.61× the size of the next power of two
-   (N=9973: 20000 = 2⁵·5⁴ vs a 32768-point pad). Result: **9973 ~2.4×→~1.62×,
-   10007 ~2.2×→~1.65×, 5003 ~3.1×→~2.33×**.
-
-C. **Specialized radix-7 butterfly.** N=2017's convolution length 2016 = 2⁵·3²·7
-   has a radix-7 stage that ran on the O(7²)=49-multiply general radix-p path —
-   the single largest cost (~31% of the transform). A straight-line radix-7
-   butterfly (exploiting the three conjugate root pairs the way radix-5 exploits
-   two) replaced it. This is what carried 2017 the rest of the way to parity.
-
-D. **Alloc-free general radix-p butterfly.** The general radix-p kernel allocated
-   a length-r scratch slice *per call*, which dominated the allocation count of
-   every prime/composite transform (~581 allocs/op at N=2017). Hoisting it to a
-   fixed-size stack array (r ≤ maxRadix) dropped that to 5 allocs/op.
-
-E. **Paired conjugate-symmetric real untangle.** The even-N real transform's
-   untangle produced bins one at a time, reading Z[k] and Z[m−k] for *each* bin.
-   The two outputs of a conjugate pair (k, m−k) share the same Z reads and the
-   same twiddle W_n^k and satisfy dst[k]=xe+W·xo, dst[m−k]=conj(xe−W·xo) (since
-   W_n^m=−1), so computing the pair together halves the Z reads and twiddle
-   lookups. Result: **real 1024 ~1.2×→parity (1.06×); real 65536 now wins
-   (~1.10×); real 4096 ~1.9×→~1.62×**.
-
-F. **Plan-cache deadlock fix (correctness).** Building a Rader/Bluestein plan
-   re-enters the plan cache to construct its convolution sub-plan; the cache held
-   its lock across the whole build, so calling the package-level `FFT` on a
-   Rader-routed prime self-deadlocked. The cache now builds plans outside the lock
-   with a double-checked store (a benign race builds an identical immutable plan).
-
-## What made go-fft fast (convolution-length picker round)
-
-This round attacked the *non-smooth-N−1* primes' last documented residual (5003,
-9973, 10007), where the Rader convolution is a linear one padded to ≥ 2(N−1). The
-prior rule padded to the **smallest 2·3·5-smooth** length ≥ 2(N−1). Two measured
-inefficiencies:
-
-* It never used the engine's fast straight-line **radix-7** butterfly — a 7-smooth
-  pad was off the table even when one is cheaper.
-* "Smallest smooth" can land on a **pathological factorization**. N=10007's pick
-  was 20250 = 2·3⁴·5³ (one radix-2, four radix-3, three radix-5 — a long chain of
-  the costlier odd butterflies).
-
-`bestConvLen` now searches the 7-smooth candidates in [2(N−1), ⌈1.4·2(N−1)⌉] and
-returns the one minimizing `convCost`, a per-radix cost model (weights {4,2: 2.0,
-3: 2.0, 5: 2.8, 7: 2.6}) calibrated against **controlled** back-to-back FFT-pair
-timings — one process, the candidates interleaved, best-of-4 — so the calibration
-is immune to the cross-run thermal drift that makes whole-transform A/B unreliable
-on this host. The window is provably non-empty (consecutive 7-smooth integers
-differ by < 1.4× for every lower bound, verified exhaustively past any
-convolution length the prime engines produce).
-
-Controlled A/B of the convolution FFT-pair cost (forward + pointwise + inverse),
-old pad → new pad, same process, best-of-4 (ns/op):
-
-| N | old pad | new pad | conv-pair before | conv-pair after | delta |
-|---:|---:|---:|---:|---:|---:|
-| 5003 | 10125 = 2·3⁴·5³ | 10080 = 2⁵·3²·5·7 | 177 105 | **167 926** | −5% |
-| 9973 | 20000 = 2⁵·5⁴ | 20000 (unchanged) | 310 365 | 310 365 | 0% |
-| 10007 | 20250 = 2·3⁴·5³ | 20160 = 2⁶·3²·5·7 | 327 110 | **297 482** | −9% |
-
-The picker is calibrated to **never regress** versus the old rule and to take the
-clean wins; it leaves a small residual versus the *true* per-prime optimum
-(5003's measured-cheapest 7-smooth pad is 10290 = 2·3·5·7³ at ~149 µs, which no
-multiplicative per-radix cost model can select — three radix-7 stages beat a
-denser radix-4 chain by a margin that is not separable per factor). The
-remaining large-prime gap to FFTW (~1.6–2.3×) is unchanged in character: it is
-the structural ≈2× linear-vs-cyclic pad penalty plus FFTW's codelet-fused
-length-(N−1) convolution, the documented pure-Go ceiling (see **Remaining gap**).
-Every cyclic-at-q substitute was re-measured this round and lost: a length-q
-Bluestein recursion (q's large factor pads it to a bigger power of two), an
-O(p²) large-radix leaf, a naive and a tight PFA with cached small-prime sub-FFTs,
-and an Agarwal–Cooley axis-matmul — all slower than the smooth pad, because the
-medium/large prime factors (41, 61, 277, 5003) have no cheap length-p DFT in
-pure Go without FFTW's hand-written prime codelets.
-
-The earlier round's optimizations (still in force) follow.
-
-1. **Multicore N-dimensional transforms.** FFTN/FFT2/RFFT2/IRFFT2 reuse one
-   cached plan per axis (no per-line plan lookup or output allocation) and
-   distribute the independent axis lines across goroutines above a work-size
-   threshold. This is the lever single-threaded pocketfft cannot pull:
-
-   | shape | before | after | vs scipy.fft2 |
-   |:--|---:|---:|:--|
-   | 512×512 | 10.7 ms | **2.60 ms** | ~tie |
-   | 1024×1024 | 38.1 ms | **9.62 ms** | **go-fft wins** |
-
-2. **Inlined mixed-radix leaf level.** A deep power-of-two factorization spent
-   most of its calls on trivial length-1 sub-DFTs. Gathering the strided leaf
-   samples directly and letting the radix butterfly do the size-r DFT removes
-   that bottom layer of the call tree (it was ~36% of mid-range runtime):
-
-   | N | before | after |
-   |---:|---:|---:|
-   | 1024 | 10.3 µs | **8.0 µs** (−22%) |
-   | 4096 | 47.7 µs | **32 µs** (−30%) |
-   | 65536 | 825 µs | **614 µs** (−19%, now beats scipy) |
-
-3. **Direct-indexed twiddle tables.** The plan precomputes the conjugate
-   (inverse) root table once and passes the active table into the butterflies,
-   which index it directly — dropping the per-element modulo and conjugate
-   branch from the radix-2/3/4/5 hot loops.
-
-4. **Rader's algorithm for large primes.** A prime-N DFT becomes a length-(N−1)
-   cyclic convolution via a primitive root, evaluated with the library's own
-   power-of-two FFTs. It is routed in place of Bluestein only above a measured
-   threshold (N ≥ 4500), where its two fewer length-N passes beat Bluestein's
-   chirp pre/post-multiply:
-
-   | N | Bluestein | Rader |
-   |---:|---:|---:|
-   | 10007 | 1.29 ms | **1.05 ms** |
-   | 9973 | 1.33 ms | **1.06 ms** |
-
-   Below the threshold Bluestein still wins (same convolution size, less
-   permutation overhead) and is kept. Both engines were measured equally
-   accurate at N = 10⁴ (~1.3e-8 max error vs the naive oracle).
-
-5. **Branch-free RFFT untangle.** The even-N real transform's untangle handles
-   the wrapping DC/Nyquist bins outside the loop and expands the interior into
-   real arithmetic, dropping the per-bin modulo and complex-multiply helpers
-   (N = 4096: 28 µs → 25.6 µs).
-
-### A note on SIMD
-
-The pointwise complex-multiply SIMD kernels (amd64/arm64/s390x/riscv64) ship for
-the Bluestein/Rader convolution step and are **re-measured each round** at the
-actual convolution widths. On arm64 at width 32768 the autovectorized scalar
-loop runs in 11.5 µs versus 38.8 µs for the de-interleaving NEON kernel — the
-hand-SIMD still **loses by ~3.3×**, so it stays off the hot path. The scalar
-default is the measured-faster choice; the SIMD kernels remain validated,
-per-arch-tested artifacts (bit-identical to the scalar oracle, asserted by the
-per-arch CI jobs) and the reference for any future widening.
-
-## Remaining gap
-
-The complex mid-range is **closed** (1024 wins, 2048/4096 tie). The Rader round
-above brought the primes whose N−1 is *smooth* to parity (2017 at 1.01×, 769 at
-1.12×) and roughly halved the rest (9973/10007 to ~1.6×, 5003 to ~2.3×), and the
-paired real untangle brought real 1024 to parity and made real 65536 a win. What
-is left, and exactly why each is a genuine pure-Go ceiling rather than an
-unexplored lever:
-
-* **Primes whose N−1 has a medium/large prime factor (5003 ~2.33×, 9973/10007
-  ~1.6×).** Rader convolves at length q = N−1. When q is smooth this is done
-  directly at length q and reaches parity (above). When q is *not* smooth (9972 =
-  2²·3²·277; 10006 = 2·5003) the convolution must be a *linear* one padded to
-  ≥ 2q, because a direct length-q transform of a non-smooth q is itself a
-  Bluestein call at the same padded size. The cheapest **7-smooth** pad is now
-  chosen by a calibrated cost model (picker round above) — taking 5003's pad to
-  10080 and 10007's off the pathological 20250 = 2·3⁴·5³ to 20160 = 2⁶·3²·5·7 —
-  but two convolution FFTs at ≈20000 points on the recursive mixed-radix engine
-  still cost ~360 µs vs FFTW's ~220 µs. FFTW convolves at *exactly* q via
-  codelet-fused mixed-radix that handles the medium prime factor as a nested
-  sub-DFT. This round re-measured every pure-Go substitute for the 2q pad and all
-  lost: a length-q Bluestein recursion, an O(p²) large-radix leaf, naive and tight
-  PFA with cached sub-FFTs, and Agarwal–Cooley axis-matmul — because 41/61/277/5003
-  have no cheap length-p DFT without hand-written prime codelets, so the recursive
-  engine runs a length-q FFT ~1.5× slower than its operation count (the "recursion
-  tax", ~18% pure call overhead at N=769). An **iterative** mixed-radix engine for
-  the smooth convolution lengths is the identified lever to close the last ~1.6×
-  (it cut the same gap for the power-of-two band in the iterative round) but is a
-  substantial new engine left for a future round; the residual is FFTW's
-  codelet-fused length-(N−1) convolution plus the structural ≈2× linear-vs-cyclic
-  pad penalty, not a missing one-line lever.
-* **Real mid-range (2048 ~1.40×, 4096 ~1.62×).** The even-N real transform packs
-  into a half-length *complex* FFT and untangles. pocketfft instead runs a
-  *dedicated real kernel* that exploits Hermitian symmetry at every butterfly
-  stage, not just at the final untangle — genuinely ~2× less arithmetic. The
-  packing/untangle overhead was minimized (branch-free real arithmetic, then the
-  paired conjugate untangle that halves the Z reads), which brought 1024 to parity
-  and 65536 to a win, but the half-complex approach cannot match a native real
-  butterfly schedule in the 2048–4096 band. A dedicated real kernel remains the
-  only way to close it and was previously declined as not worth the duplication;
-  the residual here is that architectural choice, measured.
-* **Composite N with small factors (1000 ~1.35×, 1296 ~1.67×).** Highly-composite
-  but non-power-of-two, so they run the recursive mixed-radix engine and pay the
-  same recursion tax as the prime convolutions above; the iterative mixed-radix
-  engine would lift these too.
-* **Small-2-D rows (64×64, 128×128).** Below the parallel threshold, so they run
-  the serial per-line path without the multicore payoff; lowering the threshold
-  there regressed nothing but did not help either, so it is left where the large
-  shapes win.
-
-These are the honest frontiers, each tied to one specific FFTW technique
-(codelet-fused length-(N−1) convolution; a dedicated Hermitian real kernel) and
-one identified pure-Go lever (an iterative mixed-radix engine). Where go-fft wins
-or ties — small-N, complex mid-range, large 1-D, large 2-D, smooth-N−1 primes,
-real 1024/65536 — the tables above show it.
+> The unifying lever is **item 1 (go-asmgen SIMD butterflies)**: it attacks the
+> pow2/composite mid-range, the per-line cost inside 2-D, and feeds the real and
+> prime paths (which both convolve via complex FFTs).

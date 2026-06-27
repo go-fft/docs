@@ -28,9 +28,10 @@ y := fft.IFFT(X)         // round-trips back to x
 | Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett` |
 | Spectral | `PSD`, `Spectrogram` |
 
-Power-of-two lengths use radix-2 Cooley–Tukey; arbitrary lengths use Bluestein's
-chirp-z transform. Normalization, bin layout and frequency conventions follow
-`numpy.fft`.
+Powers of two use a **split-radix** kernel; other highly-composite lengths use
+**mixed-radix Cooley–Tukey**; primes use **Rader's algorithm** (from N=700) and
+**Bluestein's chirp-z** otherwise, with all twiddle factors cached per length.
+Normalization, bin layout and frequency conventions follow `numpy.fft`.
 
 ## SIMD & architectures
 
