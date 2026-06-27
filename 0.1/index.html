@@ -504,9 +504,10 @@ test-first with <strong>100% coverage</strong> and differentially checked agains
 </tr>
 </tbody>
 </table>
-<p>Power-of-two lengths use radix-2 Cooley–Tukey; arbitrary lengths use Bluestein's
-chirp-z transform. Normalization, bin layout and frequency conventions follow
-<code>numpy.fft</code>.</p>
+<p>Powers of two use a <strong>split-radix</strong> kernel; other highly-composite lengths use
+<strong>mixed-radix Cooley–Tukey</strong>; primes use <strong>Rader's algorithm</strong> (from N=700) and
+<strong>Bluestein's chirp-z</strong> otherwise, with all twiddle factors cached per length.
+Normalization, bin layout and frequency conventions follow <code>numpy.fft</code>.</p>
 <h2 id="simd-architectures">SIMD &amp; architectures<a class="headerlink" href="#simd-architectures" title="Permanent link">&para;</a></h2>
 <p>The pointwise complex-multiply kernel is bit-identical across a portable scalar
 path and <strong>go-asmgen SIMD</strong> on four targets — amd64 (SSE2), arm64 (NEON),
