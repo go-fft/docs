@@ -1078,14 +1078,15 @@ reuses.</p>
 <h2 id="honest-read">Honest read<a class="headerlink" href="#honest-read" title="Permanent link">&para;</a></h2>
 <p><strong>vs gonum</strong> (the fair pure-Go, CGO=0 peer): go-fft is faster at <strong>every</strong> size
 measured — typically 3–5× on composite N and an order of magnitude on primes
-(gonum falls back to a naive Bluestein with no Rader path; up to ~59× faster on
-primes). go-fft is the fastest pure-Go FFT here.</p>
+(gonum falls back to a naive Bluestein with no Rader path; ~33× faster at
+N=1009 up to ~205× faster at N=10007). go-fft is the fastest pure-Go FFT here.</p>
 <p><strong>vs pocketfft</strong> (numpy/scipy): go-fft wins the small-N rows outright (the Python
 FFI tax dominates pocketfft's C kernel there) and is competitive-to-winning at
 large 1-D and large 2-D; the residual losses are the mid-range single-core bands.</p>
 <p><strong>vs FFTW</strong> (the C gold standard): go-fft <strong>wins outright</strong> at the large 2-D
 multicore shapes (256×256 at parity, 512×512 and 1024×1024 beating all), and is
-within ~1.2–1.6× of FFTW on the large-prime rows relative to FFTW's own cost.
+within ~1.3–2.2× of FFTW on the large-prime rows (1009 at 1.26×, 10007 at
+2.15×) — vs gonum's ~30× gap at the same sizes.
 FFTW still leads the single-core power-of-two and smooth-composite mid-range — it
 has hand-written SIMD codelets and a dedicated Hermitian real kernel. go-fft's
 butterflies are now SIMD too (routed SSE2 on amd64 — <strong>1.34–1.43× faster</strong> than
