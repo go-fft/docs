@@ -106,6 +106,11 @@ equivalent for Go, with no dependency on the native FFTW3 C library.
 
 ## Phase 4 — SIMD kernels via go-asmgen — IN PROGRESS
 
+> The pointwise complex multiply is done on four targets and deliberately not
+> routed; the amd64 butterfly stage kernels, SSE2 and AVX2, are done AND routed.
+> What remains is wider pointwise kernels and the two targets the Go assembler
+> cannot express yet.
+
 The hot kernel chosen first is the **pointwise (Hadamard) complex multiply**,
 `a[i] *= b[i]` over `[]complex128`, which drives Bluestein's spectral product.
 The scalar `CMulScalar` is the portable correctness oracle; `CMul` is the stable
@@ -219,8 +224,10 @@ slower; the `VLD2`/`VST2` deinterleave dominates). amd64 SSE2 is similar. So eve
 where a kernel is bit-identical, routing the hot path through it would be a
 regression. The dispatch (`CMul`) therefore keeps the scalar implementation on
 the hot path; each SIMD kernel is retained as a per-arch-validated artifact and
-the reference for future **wider** kernels (AVX2/AVX-512, or arm64 SVE / unrolled
-NEON), where a win is plausible. Benchmarks: `BenchmarkCMulScalar*` vs
+the reference for future **wider** kernels (AVX-512, or arm64 SVE / unrolled
+NEON), where a win is plausible. The AVX2 case is no longer future: it shipped,
+but for the BUTTERFLY stages rather than for `CMul`, which is still scalar on the
+hot path for the reason given above. Benchmarks: `BenchmarkCMulScalar*` vs
 `BenchmarkCMulSIMD*`.
 
 ### Split CI + coverage policy
@@ -270,11 +277,40 @@ job; the gate is never lowered and there is no coverage-gaming knob.
   hardware-validated on cfarm95; a future improvement would be an RVV-capable CI
   runner so the bit-identity proof also runs in CI (today it runs scalar there
   and the proof is on real hardware).
-- Wider kernels (amd64 AVX2/AVX-512, arm64 SVE / unrolled NEON, multiple complex
-  per iteration) and a measurement to decide if/when to route `CMul` through SIMD
-  on the hot path.
-- A bit-identical vectorized butterfly (`Radix2` inner loop) once the pointwise
-  multiply is solid across arches.
+- Wider kernels for the pointwise multiply (amd64 AVX-512, arm64 SVE / unrolled
+  NEON, multiple complex per iteration), and a measurement to decide if/when to
+  route `CMul` through SIMD on the hot path at all.
+
+### Shipped since this section was written
+
+Two items below used to sit under *Remaining*, and did not move when the code
+did. Both landed in [go-fft/fft#7](https://github.com/go-fft/fft/pull/7).
+
+- **The bit-identical vectorized butterfly is done**, and it is a whole STAGE
+  rather than an inner loop: `radix4StageSSE2Fwd`/`Inv` and `radix2StageSSE2`
+  across the amd64 baseline, plus `radix4StageAVX2Fwd`/`Inv` and
+  `radix2LeafAVX2` where the CPU and the OS both allow AVX2, chosen at run time.
+  It did **not** wait for "the pointwise multiply solid across arches", because
+  the two turned out to be independent: the butterfly wins where the multiply
+  does not.
+- **amd64 AVX2 is done** for those stage kernels — two butterflies per YMM
+  register, arithmetic order preserved exactly (separately rounded multiply, add
+  and subtract, no FMA, no reassociation), so an AVX2 result is bit-identical to
+  the SSE2 one and to the scalar oracle.
+
+Measured on an Intel Core i5-14600K, `GOAMD64=v1`, one thread, affinity to CPU 0,
+median of five 400 ms repetitions on a reusable `RealPlan`, 0 B/op throughout;
+raw runs committed under `benchmarks/results/amd64-avx2-20260922/`:
+
+| real input | SSE2 | AVX2 | time |
+| ---: | ---: | ---: | ---: |
+| 64 | 135.5 ns | 95.99 ns | −29.2% |
+| 256 | 562.3 ns | 402.0 ns | −28.5% |
+| 512 | 1,145 ns | 919.2 ns | −19.7% |
+| 1,024 | 2,521 ns | 1,734 ns | −31.2% |
+| 2,048 | 5,230 ns | 4,256 ns | −18.6% |
+| 4,096 | 11,349 ns | 7,398 ns | −34.8% |
+| 16,384 | 50,527 ns | 32,676 ns | −35.3% |
 
 ## Phase 5 — Ruby binding — DONE
 
