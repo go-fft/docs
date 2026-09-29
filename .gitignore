@@ -1,3 +1,4 @@
-/site/
-.venv/
-__pycache__/
+# Hugo build output and module cache.
+public/
+resources/
+.hugo_build.lock

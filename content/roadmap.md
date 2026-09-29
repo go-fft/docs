@@ -1,5 +1,8 @@
-# go-fft roadmap
-
+---
+title: "Roadmap"
+weight: 20
+description: "The phased plan, and what each phase actually landed."
+---
 `go-fft/fft` is a pure-Go (cgo-free) FFT library — the `numpy.fft` / `scipy.fft`
 equivalent for Go, with no dependency on the native FFTW3 C library.
 

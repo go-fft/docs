@@ -1,5 +1,8 @@
-# Performance
-
+---
+title: "Performance"
+weight: 10
+description: "Head-to-head against FFTW, pocketfft and gonum, correctness-gated."
+---
 `go-fft` is benchmarked head-to-head against the implementations that matter:
 
 * **FFTW** — native **fftw-3.3.11** (Homebrew arm64 bottle, NEON, linked from C) —

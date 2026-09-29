@@ -1,0 +1,49 @@
+# go-fft documentation, built with Hugo and hugo-theme-relearn.
+#
+# It replaces MkDocs Material + mike. The site keeps its address,
+# https://go-fft.github.io/docs/, so every link into it still resolves; what
+# changes is what builds it and how it is published (GitHub Actions rather
+# than a gh-pages branch, which is what the rest of this organisation does).
+
+baseURL = "https://go-fft.github.io/docs/"
+languageCode = "en-gb"
+title = "go-fft docs"
+theme = ["github.com/McShelby/hugo-theme-relearn"]
+
+# relearn renders its own table of contents from the headings, so the pages
+# keep their <h1> in the Markdown and Hugo must not also emit the title.
+disableKinds = ["taxonomy", "term"]
+enableGitInfo = true
+
+[markup.goldmark.renderer]
+  # The pages carry no raw HTML today. This stays false so that a page which
+  # grows some has to say so in a pull request rather than silently rendering it.
+  unsafe = false
+
+[markup.highlight]
+  noClasses = false
+  style = "github"
+
+[params]
+  description = "A pure-Go (CGO=0) FFT library — the numpy.fft / scipy.fft equivalent for Go, no FFTW."
+  editURL = "https://github.com/go-fft/docs/edit/main/content/"
+  themeVariant = ["auto", "relearn-light", "relearn-dark"]
+  disableBreadcrumb = false
+  disableLandingPageButton = true
+  # The logo that MkDocs Material carried in `theme.logo`.
+  showVisitedLinks = true
+
+[[menu.shortcuts]]
+  name = "<i class='fab fa-github'></i> go-fft/fft"
+  url = "https://github.com/go-fft/fft"
+  weight = 10
+
+[[menu.shortcuts]]
+  name = "<i class='fas fa-tachometer-alt'></i> BENCHMARKS.md"
+  url = "https://github.com/go-fft/fft/blob/main/BENCHMARKS.md"
+  weight = 20
+
+[[menu.shortcuts]]
+  name = "<i class='fas fa-code'></i> pkg.go.dev"
+  url = "https://pkg.go.dev/github.com/go-fft/fft"
+  weight = 30

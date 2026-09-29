@@ -6,87 +6,85 @@ on:
   pull_request:
   workflow_dispatch:
 
-# The build needs nothing beyond the source. Write access to the repository
-# is granted to the deploy job alone, below, so a pull request build cannot
-# push to gh-pages.
+# The build needs nothing beyond the source. The deploy job below is the only
+# one granted anything more, so a pull request build cannot publish.
 permissions:
   contents: read
 
 jobs:
-  # Build on every pull request as well as on main, so a change to the docs or to
-  # the toolchain in requirements.txt has to prove it still builds before it
-  # lands. Without this the workflow ran only on main, which meant a dependency
-  # bump had no signal at all and nothing could say whether it was safe to merge.
+  # Build on every pull request as well as on main: a change to the content or
+  # to the theme pin has to prove it still builds before it lands.
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - uses: actions/checkout@v7
         with:
-          python-version: "3.14"
-          cache: pip
-          cache-dependency-path: requirements.txt
+          fetch-depth: 0 # enableGitInfo needs the history for "last modified"
 
-      - name: Install MkDocs Material + mike
+      # The theme is a Hugo Module, so the Go toolchain resolves it from the
+      # pin in go.mod. No submodule to initialise, and Renovate can see it.
+      - uses: actions/setup-go@v6
+        with: { go-version: stable }
+
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: "0.166.0"
+          extended: true
+
+      - uses: actions/configure-pages@v6
+        id: pages
+
+      # --gc removes stale resources; the build is not "strict" the way
+      # `mkdocs build --strict` was, so the two checks below do that job
+      # explicitly rather than trusting a zero exit.
+      - name: build
+        run: hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+
+      # PROVES: it produced the site, not merely a directory. Hugo exits 0 on a
+      # project with no content at all, so the exit status above says nothing
+      # on its own.
+      - name: it produced the pages
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          for p in index.html performance/index.html roadmap/index.html; do
+            test -s "public/$p" || { echo "::error::public/$p missing or empty"; exit 1; }
+          done
+          bytes=$(wc -c < public/index.html)
+          echo "index.html: $bytes bytes"
+          test "$bytes" -ge 4000 || { echo "::error::index.html is $bytes bytes, a shell and not the page"; exit 1; }
 
-      # --strict turns a broken link or an unknown config key into a failure
-      # rather than a warning nobody reads.
-      - name: Build the site (strict)
-        run: mkdocs build --strict
+      # PROVES: the pages reach each other. The sidebar is the whole reason for
+      # this theme, and a build where every page renders alone would still pass
+      # the check above.
+      - name: the pages link to each other
+        run: |
+          for p in index.html performance/index.html roadmap/index.html; do
+            for target in performance roadmap; do
+              grep -q "$target/index.html" "public/$p" || {
+                echo "::error::public/$p does not link to $target"; exit 1; }
+            done
+          done
+          echo "navigation present on all three pages"
 
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: public
+
+  # Only main publishes.
   deploy:
-    # Only main publishes. A pull request stops after build above: it has no
-    # business pushing to gh-pages, and `permissions: contents: write` is not
-    # granted to a fork's PR anyway.
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: build
-    # Two deploys must never run at once: `mike deploy --push` pushes gh-pages,
-    # and a second job doing the same is rejected outright --
-    #
-    #   ! [rejected]  gh-pages -> gh-pages (fetch first)
-    #
-    # cancel-in-progress stays FALSE deliberately: killing a publish half way
-    # through is worse than making it wait, and the queued run then fetches the
-    # gh-pages the previous one just wrote.
-    concurrency:
-      group: gh-pages-deploy
-      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Two deploys must never run at once. cancel-in-progress stays FALSE
+    # deliberately: killing a publish half way through is worse than queueing.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.14"
-
-      - name: Install MkDocs Material + mike
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Configure git for mike
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      # mike publishes versioned docs to the gh-pages branch; GitHub Pages serves
-      # that branch at https://go-fft.github.io/docs/. The version label
-      # tracks main as "0.1" aliased "latest"; tag-driven versions can be added
-      # later. /docs/ redirects to the default ("latest").
-      - name: Deploy versioned docs
-        run: |
-          git fetch origin gh-pages --depth=1 || true
-          mike deploy --push --update-aliases 0.1 latest
-          mike set-default --push latest
+      - id: deployment
+        uses: actions/deploy-pages@v5
