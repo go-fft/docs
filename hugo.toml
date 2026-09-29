@@ -27,7 +27,14 @@ enableGitInfo = true
 [params]
   description = "A pure-Go (CGO=0) FFT library — the numpy.fft / scipy.fft equivalent for Go, no FFTW."
   editURL = "https://github.com/go-fft/docs/edit/main/content/"
-  themeVariant = ["auto", "relearn-light", "relearn-dark"]
+  # The brand variants first, so "auto" follows the reader's system setting
+  # between go-fft-light and go-fft-dark rather than the theme's own green.
+  themeVariant = [
+    { identifier = "go-fft-light", name = "go-fft light", auto = ["go-fft-light", "go-fft-dark"] },
+    { identifier = "go-fft-dark", name = "go-fft dark" },
+    { identifier = "relearn-light", name = "Relearn light" },
+    { identifier = "relearn-dark", name = "Relearn dark" },
+  ]
   disableBreadcrumb = false
   disableLandingPageButton = true
   # The logo that MkDocs Material carried in `theme.logo`.
