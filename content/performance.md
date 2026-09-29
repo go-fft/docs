@@ -192,6 +192,18 @@ mixed-radix + plans beats gonum everywhere and is comparable to FFTW at scale.**
    hot path stays the autovectorized Go loop. The remaining gap to FFTW on arm64
    is its real-FFT kernel and codelet scheduling (items 2–3), not raw complex-mul
    SIMD.
+
+   *Action taken (AVX2 round,
+   [go-fft/fft#7](https://github.com/go-fft/fft/pull/7))*: paired **AVX2** stage
+   kernels on top of that SSE2 baseline — two butterflies per YMM register,
+   radix-4 forward and inverse plus a radix-2 leaf — selected at run time when
+   the CPU *and* the OS support it. A further **18.6% to 35.3%** off the SSE2
+   time across seven sizes from 64 to 16,384, measured on an Intel Core
+   i5-14600K at `GOAMD64=v1`, one thread, median of five 400 ms repetitions on a
+   reusable `RealPlan`; the raw runs are committed under
+   `benchmarks/results/amd64-avx2-20260922/`. The arithmetic order is preserved
+   exactly, so the result stays bit-identical to the SSE2 kernel and to the
+   scalar oracle — this round bought speed and changed no answer.
 2. **Real mid-range (1024 … 65536).** *Root cause*: go-fft packs a real signal
    into a half-length complex FFT and untangles once; FFTW runs a dedicated real
    (r2c) kernel exploiting Hermitian symmetry at every stage (~2× less
