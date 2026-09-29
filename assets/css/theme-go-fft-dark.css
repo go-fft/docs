@@ -1,0 +1,43 @@
+:root {
+  /* go-fft-dark — the landing page's own dark tokens, same source. */
+  --PRIMARY-color: #f472b6;                    /* landing dark --accent */
+  --PRIMARY-HOVER-color: #f9a8d4;
+  --SECONDARY-color: #e0a3c4;                  /* landing dark --muted */
+  --SECONDARY-HOVER-color: #fbe6f0;
+  --ACCENT-color: #9d2463;
+  --ACCENT-HOVER-color: #db2777;
+
+  --MENU-HEADER-color: #fbe6f0;
+  --MENU-SEARCH-color: #fbe6f0;
+  --MENU-SEARCH-BG-color: rgba( 255, 255, 255, .08 );
+  --MENU-SEARCH-BORDER-color: #4a1530;
+  --MENU-HOME-LINK-color: #fbe6f0;
+  --MENU-HOME-LINK-HOVER-color: #ffffff;
+  --MENU-SECTIONS-BG-color: #2a0a1c;
+  --MENU-SECTIONS-ACTIVE-BG-color: #3b0f26;    /* landing dark --code-bg */
+  --MENU-SECTIONS-LINK-color: #e0a3c4;
+  --MENU-SECTIONS-LINK-HOVER-color: #ffffff;
+  --MENU-SECTION-ACTIVE-CATEGORY-color: #fbe6f0;
+  --MENU-SECTION-SEPARATOR-color: #4a1530;     /* landing dark --border */
+
+  --MAIN-BG-color: #1a0510;                    /* landing dark --bg */
+  --MAIN-TEXT-color: #fbe6f0;                  /* landing dark --fg */
+  --MAIN-TITLES-TEXT-color: #ffffff;
+
+  --CODE-theme: relearn-dark;
+  --CODE-BLOCK-color: #fbe6f0;
+  --CODE-BLOCK-BG-color: #2a0a1c;
+  --CODE-BLOCK-BORDER-color: #4a1530;
+  --CODE-INLINE-color: #f9a8d4;
+  --CODE-INLINE-BG-color: #3b0f26;
+  --CODE-INLINE-BORDER-color: #4a1530;
+
+  --BROWSER-theme: dark;
+  --MERMAID-theme: dark;
+  --OPENAPI-theme: dark;
+  --OPENAPI-CODE-theme: obsidian;
+
+  --BOX-CAPTION-color: #ffffff;
+  --BOX-BG-color: rgba( 26, 5, 16, .833 );
+  --BOX-TEXT-color: #fbe6f0;
+}

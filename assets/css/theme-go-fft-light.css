@@ -1,0 +1,49 @@
+:root {
+  /* go-fft-light
+   *
+   * Not invented here: every value is a token already in use on
+   * go-fft.github.io (static/css/main.css), so the documentation and the
+   * landing page are the same site to a reader who moves between them. The
+   * logo's own two colours are #ec4899 and #9d174d.
+   */
+  --PRIMARY-color: #db2777;                    /* landing --accent */
+  --PRIMARY-HOVER-color: #9d174d;              /* the logo's dark pink */
+  --SECONDARY-color: #9d2463;                  /* landing --muted */
+  --SECONDARY-HOVER-color: #2a0a1c;            /* landing --fg */
+  --ACCENT-color: #f9a8d4;                     /* search highlight */
+  --ACCENT-HOVER-color: #f472b6;
+
+  --MENU-HEADER-color: #fdf2f8;
+  --MENU-SEARCH-color: #fbe6f0;
+  --MENU-SEARCH-BG-color: rgba( 255, 255, 255, .12 );
+  --MENU-SEARCH-BORDER-color: #f9a8d4;
+  --MENU-HOME-LINK-color: #fdf2f8;
+  --MENU-HOME-LINK-HOVER-color: #ffffff;
+  --MENU-SECTIONS-BG-color: #9d174d;           /* the logo's dark pink */
+  --MENU-SECTIONS-ACTIVE-BG-color: #7d1140;
+  --MENU-SECTIONS-LINK-color: #fbcfe8;
+  --MENU-SECTIONS-LINK-HOVER-color: #ffffff;
+  --MENU-SECTION-ACTIVE-CATEGORY-color: #fdf2f8;
+  --MENU-SECTION-SEPARATOR-color: #c04a80;
+
+  --MAIN-BG-color: #fdf2f8;                    /* landing --bg */
+  --MAIN-TEXT-color: #2a0a1c;                  /* landing --fg */
+  --MAIN-TITLES-TEXT-color: #2a0a1c;
+
+  --CODE-theme: relearn-light;
+  --CODE-BLOCK-color: #2a0a1c;
+  --CODE-BLOCK-BG-color: #ffffff;
+  --CODE-BLOCK-BORDER-color: #f7cce0;          /* landing --border */
+  --CODE-INLINE-color: #9d2463;
+  --CODE-INLINE-BG-color: #fce7f3;             /* landing --code-bg */
+  --CODE-INLINE-BORDER-color: #f7cce0;
+
+  --BROWSER-theme: light;
+  --MERMAID-theme: default;
+  --OPENAPI-theme: light;
+  --OPENAPI-CODE-theme: idea;
+
+  --BOX-CAPTION-color: #ffffff;
+  --BOX-BG-color: rgba( 255, 255, 255, .833 );
+  --BOX-TEXT-color: #2a0a1c;
+}
