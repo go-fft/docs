@@ -25,16 +25,41 @@ y := fft.IFFT(X)         // round-trips back to x
 | Area | Functions |
 | --- | --- |
 | Complex 1-D | `FFT`, `IFFT` |
-| Real 1-D | `RFFT`, `IRFFT` |
+| Real 1-D | `RFFT`, `IRFFT`, `FFTReal` |
 | Multi-dimensional | `FFTN`, `IFFTN`, `FFT2`, `IFFT2`, `RFFT2`, `IRFFT2` |
 | Frequency bins | `FFTFreq`, `RFFTFreq` |
 | Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett` |
 | Spectral | `PSD`, `Spectrogram` |
+| Reusable plans | `NewPlan`, `NewRealPlan`, and the `Plan` / `RealPlan` methods below |
 
 Powers of two use a **split-radix** kernel; other highly-composite lengths use
 **mixed-radix Cooley–Tukey**; primes use **Rader's algorithm** (from N=700) and
 **Bluestein's chirp-z** otherwise, with all twiddle factors cached per length.
 Normalization, bin layout and frequency conventions follow `numpy.fft`.
+
+### Reusable plans
+
+A plan precomputes the twiddle tables once and amortizes them across calls, so
+there is no per-call `sin`/`cos`. The convenience functions above keep an
+internal per-length plan cache and get this for free; a plan is what you reach
+for when you control the loop.
+
+```go
+p := fft.NewPlan(n)        // complex transform of length n
+p.FFT(dst, src)            // []complex128 of length n, dst and src may alias
+p.IFFT(dst, src)           // normalized inverse
+p.Len()                    // n
+
+rp := fft.NewRealPlan(n)   // real-input transform
+rp.RFFT(dst, src)          // src []float64 (n), dst []complex128 (n/2+1)
+rp.IRFFT(out, spec)        // out []float64 (n), spec the half spectrum
+rp.Len()                   // n
+```
+
+This page used to list every other exported function and not these, which was
+worth fixing beyond tidiness: the AVX2 figures below are measured on a reusable
+`RealPlan`, so the documentation was quoting the speed of a path it did not
+document.
 
 ## SIMD & architectures
 
