@@ -1,36 +1,37 @@
 :root {
-  /* go-fft-dark — the landing page's own dark tokens, same source. */
-  --PRIMARY-color: #f472b6;                    /* landing dark --accent */
-  --PRIMARY-HOVER-color: #f9a8d4;
-  --SECONDARY-color: #e0a3c4;                  /* landing dark --muted */
-  --SECONDARY-HOVER-color: #fbe6f0;
-  --ACCENT-color: #9d2463;
-  --ACCENT-HOVER-color: #db2777;
+  /* go-fft-dark — the landing page's own dark tokens (go-ndarray's emerald),
+   * same source as go-fft-light. */
+  --PRIMARY-color: #34d399;                    /* landing dark --accent */
+  --PRIMARY-HOVER-color: #6ee7b7;              /* landing dark --accent-2 */
+  --SECONDARY-color: #6ee7b7;                  /* landing dark --muted */
+  --SECONDARY-HOVER-color: #d1fae5;            /* landing dark --fg */
+  --ACCENT-color: #047857;
+  --ACCENT-HOVER-color: #059669;
 
-  --MENU-HEADER-color: #fbe6f0;
-  --MENU-SEARCH-color: #fbe6f0;
+  --MENU-HEADER-color: #d1fae5;
+  --MENU-SEARCH-color: #d1fae5;
   --MENU-SEARCH-BG-color: rgba( 255, 255, 255, .08 );
-  --MENU-SEARCH-BORDER-color: #4a1530;
-  --MENU-HOME-LINK-color: #fbe6f0;
+  --MENU-SEARCH-BORDER-color: #0a3d2a;         /* landing dark --border */
+  --MENU-HOME-LINK-color: #d1fae5;
   --MENU-HOME-LINK-HOVER-color: #ffffff;
-  --MENU-SECTIONS-BG-color: #2a0a1c;
-  --MENU-SECTIONS-ACTIVE-BG-color: #3b0f26;    /* landing dark --code-bg */
-  --MENU-SECTIONS-LINK-color: #e0a3c4;
+  --MENU-SECTIONS-BG-color: #052e22;           /* landing dark --bg-2 */
+  --MENU-SECTIONS-ACTIVE-BG-color: #06291c;    /* landing dark --code-bg */
+  --MENU-SECTIONS-LINK-color: #a7f3d0;         /* landing dark --accent-3 */
   --MENU-SECTIONS-LINK-HOVER-color: #ffffff;
-  --MENU-SECTION-ACTIVE-CATEGORY-color: #fbe6f0;
-  --MENU-SECTION-SEPARATOR-color: #4a1530;     /* landing dark --border */
+  --MENU-SECTION-ACTIVE-CATEGORY-color: #d1fae5;
+  --MENU-SECTION-SEPARATOR-color: #0a3d2a;     /* landing dark --border */
 
-  --MAIN-BG-color: #1a0510;                    /* landing dark --bg */
-  --MAIN-TEXT-color: #fbe6f0;                  /* landing dark --fg */
+  --MAIN-BG-color: #04130d;                    /* landing dark --bg */
+  --MAIN-TEXT-color: #d1fae5;                  /* landing dark --fg */
   --MAIN-TITLES-TEXT-color: #ffffff;
 
   --CODE-theme: relearn-dark;
-  --CODE-BLOCK-color: #fbe6f0;
-  --CODE-BLOCK-BG-color: #2a0a1c;
-  --CODE-BLOCK-BORDER-color: #4a1530;
-  --CODE-INLINE-color: #f9a8d4;
-  --CODE-INLINE-BG-color: #3b0f26;
-  --CODE-INLINE-BORDER-color: #4a1530;
+  --CODE-BLOCK-color: #d1fae5;
+  --CODE-BLOCK-BG-color: #052e22;
+  --CODE-BLOCK-BORDER-color: #0a3d2a;
+  --CODE-INLINE-color: #a7f3d0;
+  --CODE-INLINE-BG-color: #06291c;
+  --CODE-INLINE-BORDER-color: #0a3d2a;
 
   --BROWSER-theme: dark;
   --MERMAID-theme: dark;
@@ -38,6 +39,6 @@
   --OPENAPI-CODE-theme: obsidian;
 
   --BOX-CAPTION-color: #ffffff;
-  --BOX-BG-color: rgba( 26, 5, 16, .833 );
-  --BOX-TEXT-color: #fbe6f0;
+  --BOX-BG-color: rgba( 4, 19, 13, .833 );
+  --BOX-TEXT-color: #d1fae5;
 }
