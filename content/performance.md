@@ -43,7 +43,8 @@ rounds (what was tried, kept or dropped, and why) are in
   Go passes.
 * **A prime whose N−1 is 7-smooth**: **Rader's algorithm**. **Any other length**:
   **Bluestein's chirp-z**. Both convolve on the Stockham engine.
-* **Powers of two on riscv64, loong64, s390x, and amd64 without AVX2**: an
+* **Powers of two on loong64, s390x and amd64 without AVX2, and above 65536
+  on riscv64**: an
   iterative, cache-blocked radix-4 kernel.
 * On arm64 and the other non-amd64 targets the passes are Go code, compiled to
   scalar instructions. gc does not vectorize; it does fuse multiply-adds.
