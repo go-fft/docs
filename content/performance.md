@@ -16,8 +16,9 @@ the same machine, with the same inputs and sizes:
 Correctness is gated first: every go-fft transform must match `numpy.fft` within
 `rtol=1e-9, atol=1e-7` before any timing is reported.
 
-The numbers below are **go-fft v0.1.5**, measured on 2026-10-04 on two GCC Compile
-Farm hosts. The raw runs are in
+The numbers below were measured on 2026-10-04 on three GCC Compile Farm hosts:
+**go-fft v0.1.5** on Zen 3 and Neoverse-N1, **v0.1.7** on Cascade Lake. None of
+those machines runs different code under the current release. The raw runs are in
 [`benchmarks/results/`](https://github.com/go-fft/fft/blob/main/benchmarks/results/), and the dated optimization
 rounds (what was tried, kept or dropped, and why) are in
 [BENCHMARKS.md](https://github.com/go-fft/fft/blob/main/BENCHMARKS.md). Reproduce them with `benchmarks/run.sh`
@@ -210,17 +211,103 @@ cfarm424, 64 cores, load average < 1; FFTW 3.3.10 built from source with NEON.
 - real 65,536 (2¹⁶): 1.20×
 - complex 4,096 (2¹²): 1.16×
 
+## Intel Xeon (Cascade Lake), AVX-512
+
+cfarm151, 8 vCPUs, load average < 1; FFTW 3.3.10 built from source with SSE2/AVX/AVX2/AVX-512/FMA. go-fft v0.1.7, whose code on this machine is that of v0.1.5 and v0.1.8.
+
+- **vs FFTW (native C, gold standard)**: 5/24 ops at-or-above parity.
+- **vs numpy.fft (pocketfft)**: 24/24 ops at-or-above parity.
+- **vs scipy.fft (pocketfft)**: 24/24 ops at-or-above parity.
+- **vs gonum (pure-Go peer)**: 19/19 ops at-or-above parity.
+
+### Complex 1-D FFT
+
+| N | go-fft | FFTW | numpy.fft | scipy.fft | gonum | go/FFTW | verdict |
+|---:|---:|---:|---:|---:|---:|---:|:--|
+| 256 (2⁸) | 518 (19.8) | 364 (28.1) | 8,971 (1.1) | 6,527 (1.6) | 9,095 (1.1) | 1.42× | lags FFTW 1.42× |
+| 1,024 (2¹⁰) | 2,777 (18.4) | 2,078 (24.6) | 16,468 (3.1) | 11,988 (4.3) | 46,636 (1.1) | 1.34× | lags FFTW 1.34× |
+| 4,096 (2¹²) | 13,195 (18.6) | 11,925 (20.6) | 55,881 (4.4) | 43,591 (5.6) | 223,296 (1.1) | 1.11× | lags FFTW 1.11× |
+| 65,536 (2¹⁶) | 630,588 (8.3) | 402,862 (13.0) | 2,010,010 (2.6) | 1,379,240 (3.8) | 5,532,786 (0.9) | 1.57× | lags FFTW 1.57× |
+| 1,048,576 (2²⁰) | 30,219,146 (3.5) | 26,034,898 (4.0) | 52,323,462 (2.0) | 40,861,867 (2.6) | 137,193,076 (0.8) | 1.16× | lags FFTW 1.16× |
+| 1,000 (2³·5³) | 3,940 (12.6) | 2,767 (18.0) | 17,142 (2.9) | 14,140 (3.5) | 46,444 (1.1) | 1.42× | lags FFTW 1.42× |
+| 1,080 (2³·3³·5) | 4,681 (11.6) | 3,001 (18.1) | 20,430 (2.7) | 13,235 (4.1) | 56,431 (1.0) | 1.56× | lags FFTW 1.56× |
+| 1,920 (2⁷·3·5) | 7,900 (13.3) | 4,918 (21.3) | 30,208 (3.5) | 21,510 (4.9) | 97,921 (1.1) | 1.61× | lags FFTW 1.61× |
+| 1,009 (prime) | 19,932 (2.5) | 30,736 (1.6) | 79,351 (0.6) | 55,867 (0.9) | 1,955,698 (0.0) | 0.65× | **≥ parity** |
+| 1,296 (2⁴·3⁴) | 6,369 (10.5) | 3,628 (18.5) | 20,564 (3.3) | 15,806 (4.2) | 66,231 (1.0) | 1.76× | lags FFTW 1.76× |
+| 10,007 (prime) | 346,752 (1.9) | 359,673 (1.8) | 852,248 (0.8) | 728,135 (0.9) | 192,346,904 (0.0) | 0.96× | **≥ parity** |
+
+### Real 1-D RFFT
+
+| N | go-fft | FFTW | numpy.rfft | scipy.rfft | gonum | go/FFTW | verdict |
+|---:|---:|---:|---:|---:|---:|---:|:--|
+| 256 (2⁸) | 494 (10.4) | 370 (13.9) | 6,517 (0.8) | 6,643 (0.8) | 4,607 (1.1) | 1.34× | lags FFTW 1.34× |
+| 1,024 (2¹⁰) | 1,753 (14.6) | 1,506 (17.0) | 12,139 (2.1) | 10,123 (2.5) | 22,355 (1.1) | 1.16× | lags FFTW 1.16× |
+| 4,096 (2¹²) | 9,144 (13.4) | 7,354 (16.7) | 32,419 (3.8) | 31,497 (3.9) | 97,673 (1.3) | 1.24× | lags FFTW 1.24× |
+| 65,536 (2¹⁶) | 245,318 (10.7) | 194,778 (13.5) | 616,113 (4.3) | 688,198 (3.8) | 2,192,859 (1.2) | 1.26× | lags FFTW 1.26× |
+| 1,048,576 (2²⁰) | 16,068,287 (3.3) | 10,403,525 (5.0) | 20,155,236 (2.6) | 21,152,562 (2.5) | 66,732,806 (0.8) | 1.54× | lags FFTW 1.54× |
+| 1,000 (2³·5³) | 2,464 (10.1) | 2,016 (12.4) | 13,082 (1.9) | 11,991 (2.1) | 22,643 (1.1) | 1.22× | lags FFTW 1.22× |
+| 1,080 (2³·3³·5) | 2,846 (9.6) | 2,156 (12.6) | 13,432 (2.0) | 11,119 (2.4) | 24,921 (1.1) | 1.32× | lags FFTW 1.32× |
+| 1,920 (2⁷·3·5) | 4,477 (11.7) | 3,456 (15.1) | 18,370 (2.8) | 15,260 (3.4) | 45,519 (1.2) | 1.30× | lags FFTW 1.30× |
+
+### Real inverse 1-D IRFFT
+
+| N | go-fft | FFTW | go/FFTW | verdict |
+|---:|---:|---:|---:|:--|
+| 256 (2⁸) | 520 (9.8) | 529 (9.7) | 0.98× | **≥ parity** |
+| 1,024 (2¹⁰) | 1,813 (14.1) | 1,976 (13.0) | 0.92× | **≥ parity** |
+| 4,096 (2¹²) | 9,263 (13.3) | 8,378 (14.7) | 1.11× | lags FFTW 1.11× |
+| 65,536 (2¹⁶) | 252,618 (10.4) | 215,436 (12.2) | 1.17× | lags FFTW 1.17× |
+| 1,048,576 (2²⁰) | 15,050,916 (3.5) | 9,680,486 (5.4) | 1.55× | lags FFTW 1.55× |
+| 1,000 (2³·5³) | 2,421 (10.3) | 2,279 (10.9) | 1.06× | lags FFTW 1.06× |
+| 1,080 (2³·3³·5) | 2,801 (9.7) | 2,329 (11.7) | 1.20× | lags FFTW 1.20× |
+| 1,920 (2⁷·3·5) | 4,535 (11.5) | 3,960 (13.2) | 1.15× | lags FFTW 1.15× |
+
+### 2-D complex FFT2
+
+| shape | go-fft | FFT2 | FFTW | numpy.fft2 | scipy.fft2 | go/FFTW | verdict |
+|:--|---:|---:|---:|---:|---:|---:|:--|
+| 64x64 | 34,023 (7.2) | 48,515 (5.1) | 15,083 (16.3) | 57,151 (4.3) | 44,842 (5.5) | 2.26× | lags FFTW 2.26× |
+| 128x128 | 140,357 (8.2) | 191,900 (6.0) | 84,074 (13.6) | 211,819 (5.4) | 180,727 (6.3) | 1.67× | lags FFTW 1.67× |
+| 256x256 | 498,210 (10.5) | 734,341 (7.1) | 480,842 (10.9) | 945,551 (5.5) | 770,487 (6.8) | 1.04× | **≥ parity** |
+| 512x512 | 1,855,475 (12.7) | 2,943,242 (8.0) | 2,627,125 (9.0) | 6,672,469 (3.5) | 4,669,821 (5.1) | 0.71× | **≥ parity** |
+| 1024x1024 | 8,430,820 (12.4) | 11,388,587 (9.2) | 25,825,030 (4.1) | 30,855,494 (3.4) | 27,295,744 (3.8) | 0.33× | **≥ parity** |
+
+**Rows behind FFTW, worst first:**
+
+- 2-D 64x64: 2.26×
+- complex 1,296 (2⁴·3⁴): 1.76×
+- 2-D 128x128: 1.67×
+- complex 1,920 (2⁷·3·5): 1.61×
+- complex 65,536 (2¹⁶): 1.57×
+- complex 1,080 (2³·3³·5): 1.56×
+- real 1,048,576 (2²⁰): 1.54×
+- complex 1,000 (2³·5³): 1.42×
+- complex 256 (2⁸): 1.42×
+- complex 1,024 (2¹⁰): 1.34×
+- real 256 (2⁸): 1.34×
+- real 1,080 (2³·3³·5): 1.32×
+- real 1,920 (2⁷·3·5): 1.30×
+- real 65,536 (2¹⁶): 1.26×
+- real 4,096 (2¹²): 1.24×
+- real 1,000 (2³·5³): 1.22×
+- real 1,024 (2¹⁰): 1.16×
+- complex 1,048,576 (2²⁰): 1.16×
+- complex 4,096 (2¹²): 1.11×
+
 ## Honest read
 
 * **Where go-fft leads FFTW:**
-  * the largest 1-D transforms: complex 2^20 runs in 0.59–0.63× FFTW's time, and
-    65536 in 0.85–0.97×;
+  * the largest 1-D transforms on Zen 3 and Neoverse-N1: complex 2^20 runs in
+    0.59–0.63× FFTW's time, and 65536 in 0.85–0.97× (on Cascade Lake they trail,
+    1.16–1.57×: throughput halves once the arrays outgrow its 1 MB L2);
   * primes whose N−1 is smooth (Rader);
   * the larger 2-D shapes, which go-fft spreads across cores and FFTW runs on one.
 * **Where FFTW leads:**
   * the small and mid sizes, 256 to 4096 points, by up to 1.7×;
   * small 2-D shapes (64×64, 128×128), by 2.0–2.5×;
   * composites on arm64, where go-fft's passes are scalar Go and FFTW's are NEON.
-* **Against numpy and scipy:** go-fft is at or above both on every row on Zen 3.
-* **Against gonum:** go-fft is faster at every size, 5–6× on Neoverse-N1 and
-  19–31× on Zen 3 for powers of two and composites, and 85–612× on primes.
+* **Against numpy and scipy:** go-fft is at or above both on every row on Zen 3
+  and on Cascade Lake.
+* **Against gonum:** go-fft is faster at every size, 5–6× on Neoverse-N1,
+  4.5–18× on Cascade Lake and 19–31× on Zen 3 for powers of two and composites,
+  and 85–612× on primes.
