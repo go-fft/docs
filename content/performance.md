@@ -299,7 +299,8 @@ cfarm151, 8 vCPUs, load average < 1; FFTW 3.3.10 built from source with SSE2/AVX
 * **Where go-fft leads FFTW:**
   * the largest 1-D transforms on Zen 3 and Neoverse-N1: complex 2^20 runs in
     0.59–0.63× FFTW's time, and 65536 in 0.85–0.97× (on Cascade Lake they trail,
-    1.16–1.57×: throughput halves once the arrays outgrow its 1 MB L2);
+    1.16–1.57×: throughput halves past 4096 points there, for a reason not yet
+    established — see BENCHMARKS.md, Round 13);
   * primes whose N−1 is smooth (Rader);
   * the larger 2-D shapes, which go-fft spreads across cores and FFTW runs on one.
 * **Where FFTW leads:**
