@@ -67,7 +67,8 @@ the transform itself for a small repeated shape; `PlanN` and `RealPlan2` avoid i
   general radix-p pass for 11 and 13.
 * **A prime whose N−1 is 7-smooth**: **Rader's algorithm**. **Any other length**:
   **Bluestein's chirp-z**. Both convolve on the Stockham engine.
-* **Powers of two on riscv64, loong64, s390x, and amd64 without AVX2**: an
+* **Powers of two on loong64, s390x and amd64 without AVX2, and above 65536
+  on riscv64**: an
   iterative, cache-blocked **radix-4 kernel** (SSE2 butterflies on amd64).
 * **Real transforms**: a half-length complex transform plus one untangle pass.
 * **N-D transforms**: separable, with the lines of a large axis spread across
