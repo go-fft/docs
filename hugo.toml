@@ -6,7 +6,7 @@
 # than a gh-pages branch, which is what the rest of this organisation does).
 
 baseURL = "https://go-fft.github.io/docs/"
-languageCode = "en-gb"
+locale = "en-gb"
 title = "go-fft docs"
 theme = ["github.com/McShelby/hugo-theme-relearn"]
 
@@ -25,7 +25,6 @@ enableGitInfo = true
   style = "github"
 
 [params]
-  description = "A pure-Go (CGO=0) FFT library — the numpy.fft / scipy.fft equivalent for Go, no FFTW."
   editURL = "https://github.com/go-fft/docs/edit/main/content/"
   # The brand variants first, so "auto" follows the reader's system setting
   # between go-fft-light and go-fft-dark rather than the theme's own green.
