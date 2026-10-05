@@ -17,8 +17,11 @@ Correctness is gated first: every go-fft transform must match `numpy.fft` within
 `rtol=1e-9, atol=1e-7` before any timing is reported.
 
 The numbers below were measured on 2026-10-04 on three GCC Compile Farm hosts:
-**go-fft v0.1.5** on Zen 3 and Neoverse-N1, **v0.1.7** on Cascade Lake. None of
-those machines runs different code under the current release. The raw runs are in
+**go-fft v0.1.5** on Zen 3 and Neoverse-N1, **v0.1.7** on Cascade Lake, built with
+go1.26.4. None of those machines runs different code under v0.2.0, and the Go
+1.27.1 that v0.2.0 requires moves these rows by less than 2% overall (geometric
+means 1.018 on Zen 3, 0.994 on Neoverse-N1, 1.003 on Cascade Lake; Round 16 of
+BENCHMARKS.md, 2026-10-05). The raw runs are in
 [`benchmarks/results/`](https://github.com/go-fft/fft/blob/main/benchmarks/results/), and the dated optimization
 rounds (what was tried, kept or dropped, and why) are in
 [BENCHMARKS.md](https://github.com/go-fft/fft/blob/main/BENCHMARKS.md). Reproduce them with `benchmarks/run.sh`
