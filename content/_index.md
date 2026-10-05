@@ -31,12 +31,12 @@ y := fft.IFFT(X)         // round-trips back to x
 | Multi-dimensional | `FFTN`, `IFFTN`, `FFT2`, `IFFT2`, `RFFT2`, `IRFFT2`, `RFFTN`, `IRFFTN` |
 | numpy's `n`, `norm`, `axes` | `FFTWith`, `IFFTWith`, `RFFTWith`, `IRFFTWith`, `FFTNWith`, `RFFTNWith`, … taking an `Options{N, Norm, Axes}` |
 | DCT / DST (scipy.fft) | `DCT`, `IDCT`, `DST`, `IDST`, `DCTN`, `IDCTN`, `DSTN`, `IDSTN` (types I–IV) |
-| Single precision | `FFT32`, `IFFT32`, `RFFT32`, `IRFFT32` |
+| Single precision | every function above with `32` appended (`_32` after a digit): `FFT32`, `RFFT32`, `FFTN32`, `FFT2_32`, `RFFTN32`, `FFT32With`, `HFFT32`, `DCT32`, … |
 | Shifts and lengths | `FFTShift`, `IFFTShift`, `FFTShiftN`, `IFFTShiftN`, `NextFastLen` |
 | Frequency bins | `FFTFreq`, `RFFTFreq` |
 | Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett` |
 | Spectral | `PSD`, `Spectrogram` |
-| Reusable plans | `NewPlan`, `NewRealPlan`, `NewPlanN`, `NewRealPlan2`, `NewDCTPlan`, `NewDSTPlan`, `NewPlan32`, `NewRealPlan32` |
+| Reusable plans | `NewPlan`, `NewRealPlan`, `NewPlanN`, `NewRealPlan2`, `NewDCTPlan`, `NewDSTPlan`, and their float32 twins (`NewPlan32`, `NewRealPlan32`, `NewPlanN32`, `NewRealPlan2_32`, `NewDCTPlan32`, `NewDSTPlan32`) |
 
 Normalization (`Norm`: `NormBackward`, the default, `NormOrtho`, `NormForward`),
 bin layout and frequency conventions follow `numpy.fft`; the DCT and DST follow
@@ -90,13 +90,19 @@ the transform itself for a small repeated shape; `PlanN` and `RealPlan2` avoid i
     kernels, with a final pass vectorized across blocks, and so does the real-FFT
     untangle.
   * **AVX-512:** powers of two of 256 points or more run four points per
-    register, where the CPU and the operating system support it.
+    register, where the CPU and the operating system support it. From 65536
+    points on Intel, a blocked schedule keeps the last passes in L2 (v0.12.0).
+  * **Radix 16:** on AVX2 without AVX-512, 128, 256 and 1024 points (2048 on
+    Intel) take a radix-16 pass (v0.10.0).
   * **Without AVX2:** the radix-4 kernel runs SSE2 butterflies.
 * **arm64:** the Stockham passes of radix 2/3/4/5/8, and the radix-2 to 5 final
   passes over an even number of blocks, run as generated **NEON** kernels
   (1.28× per transform on Neoverse-N1, 1.15× on Apple M4). gc fuses
   multiply-adds on arm64, so each kernel reproduces which product the Go code
-  rounds and which it fuses.
+  rounds and which it fuses. Powers of two keep their data split between
+  passes, and the columns of N-D plans run as batched NEON passes (v0.11.0).
+* **Single precision:** the float32 passes have their own AVX2 and NEON kernels
+  (v0.13.0).
 * **riscv64, loong64, ppc64le, s390x:** the passes are Go code, which the gc
   compiler compiles to scalar instructions. It does not vectorize; it does fuse
   multiply-adds.
@@ -116,7 +122,7 @@ transform that answers differently is not the same transform.
 
 - [Roadmap (phases)](roadmap.md) — the phased plan and what ships today.
 - [Performance](performance.md) — head-to-head with FFTW, numpy/scipy (pocketfft)
-  and gonum, v0.8.0 on Zen 3 and Cascade Lake, v0.7.0's NEON on Neoverse-N1.
+  and gonum, describing v0.13.0 on Zen 3, Neoverse-N1 and Cascade Lake.
 
 Source: [github.com/go-fft/fft](https://github.com/go-fft/fft) · the transform is
 also exposed to Ruby through [go-embedded-ruby](https://github.com/go-embedded-ruby/ruby)'s
