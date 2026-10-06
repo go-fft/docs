@@ -94,6 +94,10 @@ the transform itself for a small repeated shape; `PlanN` and `RealPlan2` avoid i
     points on Intel, a blocked schedule keeps the last passes in L2 (v0.12.0).
   * **Radix 16:** on AVX2 without AVX-512, 128, 256 and 1024 points (2048 on
     Intel) take a radix-16 pass (v0.10.0).
+  * **Split layout (AMD, AVX2):** powers of two keep real and imaginary parts
+    apart between passes, removing every shuffle (v0.14.0).
+  * **Composites (Intel, AVX2):** a radix-12 prime-factor pass and radix-16
+    tails up to 16384 points (v0.15.0).
   * **Without AVX2:** the radix-4 kernel runs SSE2 butterflies.
 * **arm64:** the Stockham passes of radix 2/3/4/5/8, and the radix-2 to 5 final
   passes over an even number of blocks, run as generated **NEON** kernels
@@ -101,8 +105,8 @@ the transform itself for a small repeated shape; `PlanN` and `RealPlan2` avoid i
   multiply-adds on arm64, so each kernel reproduces which product the Go code
   rounds and which it fuses. Powers of two keep their data split between
   passes, and the columns of N-D plans run as batched NEON passes (v0.11.0).
-* **Single precision:** the float32 passes have their own AVX2 and NEON kernels
-  (v0.13.0).
+* **Single precision:** the float32 passes, the real-FFT untangle and the N-D
+  column passes have their own AVX2 and NEON kernels (v0.13.0, v0.16.0).
 * **riscv64, loong64, ppc64le, s390x:** the passes are Go code, which the gc
   compiler compiles to scalar instructions. It does not vectorize; it does fuse
   multiply-adds.
@@ -113,8 +117,8 @@ the transform itself for a small repeated shape; `PlanN` and `RealPlan2` avoid i
 ⛔ The kernels keep the Go code's arithmetic exactly: on amd64 separately
 rounded multiplies and adds, no FMA, no reassociation; on arm64 the same
 fusions gc chose. Their results are therefore **bit-identical** to the Go passes
-(on arm64, except the sign of a NaN produced from infinite inputs, which IEEE
-754 leaves unspecified). The tests check it on generic,
+(except the bits of a NaN produced from infinite inputs, which IEEE 754 leaves
+unspecified). The tests check it on generic,
 signed-zero and infinite inputs, comparing `math.Float64bits`. A faster
 transform that answers differently is not the same transform.
 
@@ -122,7 +126,7 @@ transform that answers differently is not the same transform.
 
 - [Roadmap (phases)](roadmap.md) — the phased plan and what ships today.
 - [Performance](performance.md) — head-to-head with FFTW, numpy/scipy (pocketfft)
-  and gonum, describing v0.13.0 on Zen 3, Neoverse-N1 and Cascade Lake.
+  and gonum, describing v0.16.x on Zen 3, Neoverse-N1 and Cascade Lake.
 
 Source: [github.com/go-fft/fft](https://github.com/go-fft/fft) · the transform is
 also exposed to Ruby through [go-embedded-ruby](https://github.com/go-embedded-ruby/ruby)'s
