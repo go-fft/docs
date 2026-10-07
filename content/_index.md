@@ -97,7 +97,10 @@ the transform itself for a small repeated shape; `PlanN` and `RealPlan2` avoid i
   * **Split layout (AMD, AVX2):** powers of two keep real and imaginary parts
     apart between passes, removing every shuffle (v0.14.0).
   * **Composites (Intel, AVX2):** a radix-12 prime-factor pass and radix-16
-    tails up to 16384 points (v0.15.0).
+    tails up to 16384 points (v0.15.0); on AMD, radix-10/12/15/20 prime-factor
+    passes (v0.18.0).
+  * **Split layout at 512 bits (Intel, AVX-512):** powers of two from 256
+    points, eight points per register (v0.19.0).
   * **Without AVX2:** the radix-4 kernel runs SSE2 butterflies.
 * **arm64:** the Stockham passes of radix 2/3/4/5/8, and the radix-2 to 5 final
   passes over an even number of blocks, run as generated **NEON** kernels
@@ -105,6 +108,8 @@ the transform itself for a small repeated shape; `PlanN` and `RealPlan2` avoid i
   multiply-adds on arm64, so each kernel reproduces which product the Go code
   rounds and which it fuses. Powers of two keep their data split between
   passes, and the columns of N-D plans run as batched NEON passes (v0.11.0).
+  The real-FFT untangle has a NEON kernel, and small N-D plans run each axis as
+  one pass sequence over all lines (v0.17.0).
 * **Single precision:** the float32 passes, the real-FFT untangle and the N-D
   column passes have their own AVX2 and NEON kernels (v0.13.0, v0.16.0).
 * **riscv64, loong64, ppc64le, s390x:** the passes are Go code, which the gc
@@ -126,7 +131,7 @@ transform that answers differently is not the same transform.
 
 - [Roadmap (phases)](roadmap.md) — the phased plan and what ships today.
 - [Performance](performance.md) — head-to-head with FFTW, numpy/scipy (pocketfft)
-  and gonum, describing v0.16.x on Zen 3, Neoverse-N1 and Cascade Lake.
+  and gonum, describing v0.19.x on Zen 3, Neoverse-N1 and Cascade Lake.
 
 Source: [github.com/go-fft/fft](https://github.com/go-fft/fft) · the transform is
 also exposed to Ruby through [go-embedded-ruby](https://github.com/go-embedded-ruby/ruby)'s
