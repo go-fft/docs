@@ -21,6 +21,9 @@ X := fft.FFT(x)          // forward transform
 y := fft.IFFT(X)         // round-trips back to x
 ```
 
+**Try it in your browser:** the [playground](https://go-fft.github.io/playground/) runs go-fft compiled to
+WebAssembly, with nothing to install — pick a signal and a transform (FFT, RFFT, DCT/DST, any length, float64 or float32), see the spectrum, and copy the equivalent Go and numpy code.
+
 ## API surface
 
 | Area | Functions |
