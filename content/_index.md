@@ -134,7 +134,7 @@ transform that answers differently is not the same transform.
 
 - [Roadmap (phases)](roadmap.md) — the phased plan and what ships today.
 - [Performance](performance.md) — head-to-head with FFTW, numpy/scipy (pocketfft)
-  and gonum, describing v0.19.x on Zen 3, Neoverse-N1 and Cascade Lake.
+  and gonum, describing v0.23.0 on Zen 3, Neoverse-N1 and Cascade Lake.
 
 Source: [github.com/go-fft/fft](https://github.com/go-fft/fft) · the transform is
 also exposed to Ruby through [go-embedded-ruby](https://github.com/go-embedded-ruby/ruby)'s
