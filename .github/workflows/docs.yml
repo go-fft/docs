@@ -24,7 +24,7 @@ jobs:
       # The theme is a Hugo Module, so the Go toolchain resolves it from the
       # pin in go.mod. No submodule to initialise, and Renovate can see it.
       - uses: actions/setup-go@v6
-        with: { go-version: '1.27.1' }
+        with: { go-version: '1.27.2' }
 
       # The one third-party action here, and its output (the built site) is
       # what the deploy job publishes: pinned by commit, so a moved tag cannot
