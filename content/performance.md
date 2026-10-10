@@ -202,9 +202,10 @@ FFTW over `out-main1`, `out-br1`, `out-br2`, `out-main2`.
 * **Where go-fft leads FFTW:**
   * Neoverse-N1 on 22 of 24 rows, composites and 2-D included (1,296: 0.76×,
     2-D 128²: 0.66×), and within 5% on the other two (RFFT 256, RFFT 1,080);
-  * Zen 3 from 4,096 points (0.49–0.91×), 2-D from 128² on one core
+  * Zen 3 complex from 4,096 points (0.49–0.91×), RFFT from 65,536
+    (0.84–0.92×), 2-D from 128² on one core
     (0.89–1.00×), and complex 1,920 (0.99×);
-  * primes on every host: Rader's 1,009 in 0.45–0.66× FFTW's time.
+  * primes on every host: Rader's 1,009 in 0.45–0.63× FFTW's time.
 * **Where FFTW leads:**
   * small sizes on amd64: complex 256 at 1.13× on Zen 3 and 1.27× on Cascade
     Lake, RFFT 256 at 1.06× and 1.08×; on Zen 3, complex 1,000 and 1,080
