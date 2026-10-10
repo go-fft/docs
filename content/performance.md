@@ -21,14 +21,14 @@ v0.23.0's code on that host: v0.22.x changed only Intel paths, v0.23.0 only AMD
 paths, and nothing has changed arm64 since v0.21.0. Measured on three GCC Compile
 Farm hosts with go1.27.1, every row on one pinned core:
 
-* **Zen 3**: Round 32, 2026-10-09, the branch that became v0.23.0;
+* **Zen 3**: Round 34, 2026-10-09, v0.23.0;
 * **Neoverse-N1**: Round 33, 2026-10-09, v0.21.0;
 * **Cascade Lake**: Round 31, 2026-10-09, the branch that became v0.22.0.
 
 FFTW's own times move by up to 22% between runs on one host, so no single run is
 quoted. go-fft's time is the median of the three repetitions in each run, then
 the mean of two runs; FFTW's is the median over every run of the round (four on
-Zen 3 and Cascade Lake, two on Neoverse-N1); numpy and scipy are the mean of the
+Cascade Lake, two on Zen 3 and Neoverse-N1); numpy and scipy are the mean of the
 same two runs. The tables are computed from the raw files by
 [`current-numbers-v0.23.0/`](https://github.com/go-fft/fft/tree/main/benchmarks/results/current-numbers-v0.23.0/), which also lists
 each run's own value. The raw runs are in
@@ -70,8 +70,8 @@ at most 5%. "Faster" below means strictly below 1.
 
 | | Zen 3 | Neoverse-N1 | Cascade Lake |
 |:--|--:|--:|--:|
-| at or above FFTW (≤ 1.05), of 24 | 12 | 24 | 11 |
-| of which faster than FFTW | 9 | 22 | 10 |
+| at or above FFTW (≤ 1.05), of 24 | 15 | 24 | 11 |
+| of which faster than FFTW | 11 | 22 | 10 |
 | at or above numpy.fft, in both runs, of 24 | 24 | 24 | 24 |
 | at or above scipy.fft, in both runs, of 24 | 24 | 24 | 24 |
 | faster than gonum, in both runs, of 19 (1-D) | 19 | 19 | 19 |
@@ -81,47 +81,44 @@ IRFFT rows are not counted, as in every round.
 
 ## AMD EPYC 7773X (Zen 3), AVX2
 
-cfarm420, a 128-thread VM shared with other users (1-minute load 3.0–4.1 during the
-parity runs); FFTW 3.3.10 built from source with SSE2/AVX/AVX2/FMA. Runs
-`par2-br` and `par3-br` of Round 32; FFTW over `par1-main` … `par4-main`.
+cfarm420, a 128-thread VM shared with other users (1-minute load 2.2–3.7 during
+the runs, the run's own core included); FFTW 3.3.10 built from source with
+SSE2/AVX/AVX2/FMA. Runs `run1` and `run2` of Round 34 (the v0.23.0 tag); FFTW
+over the same two runs. Round 32's parity runs of the same code, taken at a load
+of 3.3–4.2, are replaced by these.
 
-- **Within 5% but slower than FFTW:** complex 10,007 (1.02), RFFT 1,000 (1.02),
-  2-D 256² (1.01).
-- **Slower by more:** complex 256 (1.09), 1,024 (1.13), 1,000 (1.06), 1,080
-  (1.09), 1,296 (1.054); RFFT 256 (1.07), 1,024 (1.08), 4,096 (1.12), 1,080
-  (1.14), 1,920 (1.08); 2-D 64² (1.13); and complex 4,096 (¹).
+- **Within 5% but slower than FFTW:** complex 1,296 (1.02), RFFT 1,024 (1.04),
+  RFFT 1,000 (1.04), RFFT 1,080 (1.01). 2-D 512² is a tie (1.000).
+- **Slower by more:** complex 256 (1.13), 1,024 (1.14), 1,000 (1.11), 1,080
+  (1.15), 10,007 (1.07); RFFT 256 (1.06), 4,096 (1.09), 1,920 (1.07); 2-D 64²
+  (1.056).
 
 | transform | go-fft | FFTW | go-fft ÷ FFTW | numpy.fft | scipy.fft |
 |:--|--:|--:|--:|--:|--:|
-| complex 256 | 306 | 280 | 1.09 | 7,026 | 5,600 |
-| complex 1,024 | 1,812 | 1,598 | 1.13 | 13,448 | 9,976 |
-| complex 4,096 | 15,516 ¹ | 10,320 | 1.50 ¹ | 44,068 | 34,161 |
-| complex 65,536 | 271,336 | 297,433 | **0.91** | 1,916,995 | 941,529 |
-| complex 1,048,576 | 6,322,353 | 11,403,185 | **0.55** | 32,030,182 | 14,687,209 |
-| complex 1,000 (2³·5³) | 2,200 | 2,074 | 1.06 | 13,738 | 10,557 |
-| complex 1,080 (2³·3³·5) | 2,606 | 2,383 | 1.09 | 14,583 | 10,823 |
-| complex 1,920 (2⁷·3·5) | 3,862 | 3,940 | **0.98** | 23,099 | 16,470 |
-| complex 1,009 (prime, Rader) | 13,331 | 20,254 | **0.66** | 61,489 | 39,326 |
-| complex 1,296 (2⁴·3⁴) | 3,118 | 2,959 | 1.054 | 16,599 | 12,692 |
-| complex 10,007 (prime, Bluestein) | 217,170 | 213,383 | **1.02** | 660,133 | 468,610 |
-| RFFT 256 | 243 | 228 | 1.07 | 6,131 | 5,333 |
-| RFFT 1,024 | 1,060 | 985 | 1.08 | 9,582 | 8,420 |
-| RFFT 4,096 | 5,962 | 5,304 | 1.12 | 25,372 | 22,149 |
-| RFFT 65,536 | 145,598 | 154,166 | **0.94** | 424,736 | 496,290 |
-| RFFT 1,048,576 | 2,934,751 | 3,781,403 | **0.78** | 8,400,873 | 10,170,434 |
-| RFFT 1,000 (2³·5³) | 1,280 | 1,260 | **1.02** | 10,675 | 8,911 |
-| RFFT 1,080 (2³·3³·5) | 1,528 | 1,341 | 1.14 | 11,186 | 9,106 |
-| RFFT 1,920 (2⁷·3·5) | 2,480 | 2,304 | 1.08 | 14,279 | 12,385 |
-| 2-D 64×64 | 12,421 | 10,986 | 1.13 | 48,812 | 33,336 |
-| 2-D 128×128 | 55,124 | 60,079 | **0.92** | 151,529 | 128,914 |
-| 2-D 256×256 | 288,030 | 284,430 | **1.01** | 635,683 | 467,818 |
-| 2-D 512×512 | 1,266,620 | 1,332,972 | **0.95** | 3,010,417 | 1,939,220 |
-| 2-D 1024×1024 | 6,047,132 | 6,776,408 | **0.89** | 14,002,910 | 9,918,276 |
-
-¹ Host load, not the code: the first run read complex 4,096 at 19.7–20.4 µs on
-all three repetitions, the second at 10.1–10.9 µs and the two main runs of the
-same round at 9.2–9.6 µs, while the load rose from 3.3 to 4.2. The second run
-alone gives 1.03. The row is kept as the method computes it.
+| complex 256 | 316 | 281 | 1.13 | 6,824 | 5,467 |
+| complex 1,024 | 1,747 | 1,527 | 1.14 | 13,119 | 10,311 |
+| complex 4,096 | 9,637 | 10,594 | **0.91** | 44,251 | 34,741 |
+| complex 65,536 | 265,370 | 321,287 | **0.83** | 1,965,724 | 926,889 |
+| complex 1,048,576 | 6,034,312 | 12,359,031 | **0.49** | 33,462,080 | 14,568,688 |
+| complex 1,000 (2³·5³) | 2,284 | 2,050 | 1.11 | 14,005 | 10,344 |
+| complex 1,080 (2³·3³·5) | 2,690 | 2,330 | 1.15 | 14,446 | 11,105 |
+| complex 1,920 (2⁷·3·5) | 3,930 | 3,960 | **0.99** | 22,038 | 16,361 |
+| complex 1,009 (prime, Rader) | 13,110 | 20,766 | **0.63** | 60,246 | 39,254 |
+| complex 1,296 (2⁴·3⁴) | 3,162 | 3,090 | **1.02** | 16,151 | 12,363 |
+| complex 10,007 (prime, Bluestein) | 224,770 | 209,784 | 1.07 | 640,514 | 488,319 |
+| RFFT 256 | 242 | 228 | 1.06 | 6,091 | 5,350 |
+| RFFT 1,024 | 1,014 | 978 | **1.04** | 9,469 | 8,361 |
+| RFFT 4,096 | 5,753 | 5,291 | 1.09 | 24,903 | 22,269 |
+| RFFT 65,536 | 142,644 | 155,034 | **0.92** | 420,792 | 509,941 |
+| RFFT 1,048,576 | 3,199,640 | 3,826,598 | **0.84** | 8,524,359 | 10,070,335 |
+| RFFT 1,000 (2³·5³) | 1,292 | 1,245 | **1.04** | 10,294 | 8,954 |
+| RFFT 1,080 (2³·3³·5) | 1,540 | 1,522 | **1.01** | 10,930 | 9,110 |
+| RFFT 1,920 (2⁷·3·5) | 2,552 | 2,382 | 1.07 | 14,443 | 12,376 |
+| 2-D 64×64 | 11,364 | 10,763 | 1.056 | 47,822 | 34,252 |
+| 2-D 128×128 | 54,459 | 61,240 | **0.89** | 143,993 | 125,006 |
+| 2-D 256×256 | 286,957 | 289,083 | **0.99** | 710,102 | 460,575 |
+| 2-D 512×512 | 1,348,098 | 1,348,278 | **1.00** | 2,884,365 | 1,888,489 |
+| 2-D 1024×1024 | 6,465,733 | 6,805,371 | **0.95** | 13,385,144 | 9,418,296 |
 
 ## Neoverse-N1 (arm64)
 
@@ -205,12 +202,13 @@ FFTW over `out-main1`, `out-br1`, `out-br2`, `out-main2`.
 * **Where go-fft leads FFTW:**
   * Neoverse-N1 on 22 of 24 rows, composites and 2-D included (1,296: 0.76×,
     2-D 128²: 0.66×), and within 5% on the other two (RFFT 256, RFFT 1,080);
-  * Zen 3 from 65,536 points (0.55–0.91×), 2-D from 128² on one core
-    (0.89–1.01×), and complex 1,920 (0.98×);
+  * Zen 3 from 4,096 points (0.49–0.91×), 2-D from 128² on one core
+    (0.89–1.00×), and complex 1,920 (0.99×);
   * primes on every host: Rader's 1,009 in 0.45–0.66× FFTW's time.
 * **Where FFTW leads:**
-  * small sizes on amd64: complex 256 at 1.09× on Zen 3 and 1.27× on Cascade
-    Lake, RFFT 256 at 1.07× and 1.08×;
+  * small sizes on amd64: complex 256 at 1.13× on Zen 3 and 1.27× on Cascade
+    Lake, RFFT 256 at 1.06× and 1.08×; on Zen 3, complex 1,000 and 1,080
+    (1.11×, 1.15×);
   * on Cascade Lake, complex 1,296 (1.20×; the split layout has no radix-3 or
     radix-12 kernel), the other composites (1.11–1.26×) and the large real
     transforms (1.13–1.14×).
