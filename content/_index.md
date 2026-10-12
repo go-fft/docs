@@ -24,6 +24,10 @@ y := fft.IFFT(X)         // round-trips back to x
 **Try it in your browser:** the [playground](https://go-fft.github.io/playground/) runs go-fft compiled to
 WebAssembly, with nothing to install — pick a signal and a transform (FFT, RFFT, DCT/DST, any length, float64 or float32), see the spectrum, and copy the equivalent Go and numpy code.
 
+**Use v0.26.3 or later.** v0.25.0 to v0.26.2 return wrong N-D results, silently,
+on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
+([v0.26.3 release notes](https://github.com/go-fft/fft/releases/tag/v0.26.3)).
+
 ## API surface
 
 | Area | Functions |
@@ -134,7 +138,7 @@ transform that answers differently is not the same transform.
 
 - [Roadmap (phases)](roadmap.md) — the phased plan and what ships today.
 - [Performance](performance.md) — head-to-head with FFTW, numpy/scipy (pocketfft)
-  and gonum, describing v0.26.0 on Zen 3, Neoverse-N1 and Cascade Lake.
+  and gonum, describing v0.27.0 on Zen 3, Neoverse-N1 and Cascade Lake.
 
 Source: [github.com/go-fft/fft](https://github.com/go-fft/fft) · the transform is
 also exposed to Ruby through [go-embedded-ruby](https://github.com/go-embedded-ruby/ruby)'s
