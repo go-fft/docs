@@ -52,6 +52,33 @@ rounds (what was tried, kept or dropped, and why) are in
 [BENCHMARKS.md](https://github.com/go-fft/fft/blob/main/BENCHMARKS.md). Reproduce them with `benchmarks/run.sh`
 (`benchmarks/remote/` for a Linux host without Go).
 
+**v0.28.0** changes no default path: default outputs are bit-identical to
+v0.27.x, so the tables below stand for it. It adds the opt-in FMA plans, whose
+column was measured separately (next section).
+
+## Opt-in FMA (`Options.FMA`, v0.28.0), measured
+
+Round 42 (2026-10-18/19, BENCHMARKS.md), the branch that became v0.28.0, two
+default and two FMA parity runs per host (`GOFFT_FMA=1`), go-fft time ÷ FFTW
+time:
+
+| row | Zen 3 default | Zen 3 FMA | Cascade Lake default | Cascade Lake FMA |
+|:--|--:|--:|--:|--:|
+| complex 256 | 1.102 | 1.063 | **1.048** | **0.962** |
+| complex 1,024 | 1.129 | 1.096 | 1.189 | **0.939** |
+| complex 4,096 | **0.893** | **0.890** | **0.957** | **0.945** |
+| RFFT 1,024 | **1.033** | **0.967** | **0.790** | **0.736** |
+| RFFT 4,096 | 1.060 | **1.045** | **1.032** | **0.940** |
+| rows ≤ 1.05, of 24 | 19 | 20 | 17 | 18 |
+
+In process against the default plan on 41 rows the FMA plans were never slower
+beyond noise (lowest 0.990 Cascade Lake, 0.991 Zen 3); where fusing lost
+(Cascade Lake 4,096–16,384 points) they run the default kernels. Accuracy
+against long-double scipy: 0.76–1.08× the default's error. Haswell and other
+amd64 CPUs were not measured. These are separate runs from the default tables
+below, so their default columns differ from them by the hosts' run-to-run
+spread.
+
 ## Method
 
 * **One pinned core** (`taskset` to a single core, so `GOMAXPROCS` is 1),
