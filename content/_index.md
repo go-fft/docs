@@ -37,6 +37,7 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | Hermitian 1-D | `HFFT`, `IHFFT` |
 | Multi-dimensional | `FFTN`, `IFFTN`, `FFT2`, `IFFT2`, `RFFT2`, `IRFFT2`, `RFFTN`, `IRFFTN` |
 | numpy's `n`, `norm`, `axes` | `FFTWith`, `IFFTWith`, `RFFTWith`, `IRFFTWith`, `FFTNWith`, `RFFTNWith`, … taking an `Options{N, Norm, Axes}` |
+| Opt-in fused multiply-add (v0.28.0) | `Options{FMA: true}` for every `...With` function, and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`, `NewRealPlan2With` (see below) |
 | DCT / DST (scipy.fft) | `DCT`, `IDCT`, `DST`, `IDST`, `DCTN`, `IDCTN`, `DSTN`, `IDSTN` (types I–IV) |
 | Single precision | every function above with `32` appended (`_32` after a digit): `FFT32`, `RFFT32`, `FFTN32`, `FFT2_32`, `RFFTN32`, `FFT32With`, `HFFT32`, `DCT32`, … |
 | Shifts and lengths | `FFTShift`, `IFFTShift`, `FFTShiftN`, `IFFTShiftN`, `NextFastLen` |
@@ -48,6 +49,31 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 Normalization (`Norm`: `NormBackward`, the default, `NormOrtho`, `NormForward`),
 bin layout and frequency conventions follow `numpy.fft`; the DCT and DST follow
 `scipy.fft`.
+
+### Opt-in fused multiply-add (`Options.FMA`)
+
+By default every amd64 kernel is bit-identical to the package's Go code, so a
+result does not depend on the CPU that computed it. `Options{FMA: true}` gives
+that up for speed on amd64 CPUs with FMA3: twiddle products and butterfly
+constants are fused, and on AVX-512 Intel CPUs (Cascade Lake) 1,024 and 2,048
+points take radix-32 passes. Results differ from the default's in the last
+bits and are as accurate (0.76–1.08× the default's error against long-double
+scipy, over 90 transforms). Elsewhere (arm64, other architectures, no FMA3)
+the option gives the default transform, bit for bit; the float32 transforms
+ignore it.
+
+```go
+X := fft.FFTWith(x, fft.Options{FMA: true})
+p := fft.NewPlanWith(1024, fft.Options{FMA: true})
+```
+
+Use it when bit-for-bit reproducibility across machines does not matter.
+Measured gains against the default plan: Cascade Lake complex 1,024 1.22×
+(0.94× FFTW's time, against 1.19× by default), 2,048 1.11×, RFFT 4,096 1.09×,
+256 and 512 1.07–1.08×; Zen 3 1–6% (complex 1,024 stays 1.10× FFTW's time).
+Where fusing measured slower (Cascade Lake 4,096 to 16,384 points) the plan
+keeps the default kernels, so no measured row is slower than the default. See
+[Performance](performance/).
 
 ### Reusable plans
 
