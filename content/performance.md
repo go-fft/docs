@@ -39,8 +39,8 @@ Farm hosts with go1.27.1, every row on one pinned core, all on 2026-10-11:
 
 Cascade Lake was not re-measured: its host was under a one-minute load of 5–11
 on 8 cores, above the load its earlier runs were taken at, so its column is the
-2026-10-11 one. Apple M4 was not measured against FFTW either: the pkgx FFTW
-bottle has no NEON codelets (see BENCHMARKS.md). What those runs do not
+2026-10-11 one. Apple M4 Max was measured against FFTW for the first time on 2026-11-02
+(v0.28.9; see the last bullet of "Honest read"). What those runs do not
 contain is said under each host: Round 39's parity binary predates its rebase
 onto v0.26.3, whose fix touches no row here.
 
@@ -331,8 +331,21 @@ v0.26.1).
   1.04–1.06× and complex 6,144 and 10,240 1.20× faster than v0.23.1 (Round 37).
   Round 37 also measured that v0.22.x cost Haswell's RFFT 256 about 1.5%;
   v0.25.0's tail jump removes the call responsible, but has not been
-  re-measured on Haswell. Apple M4 has not been measured with the current
-  engines, and no loong64 host could be reached.
+  re-measured on Haswell. No loong64 host could be reached.
+* **Apple M4 Max (first measurement against FFTW, 2026-11-02, v0.28.9):**
+  FFTW 3.3.11 from the pkgx bottle rebuilt with NEON (control: 207 `_neon`
+  symbols among 751 `_fftw_` ones in the dylib), linked statically from C;
+  the other hosts use 3.3.10 built from source. go-fft ran GOMAXPROCS=1 on an
+  unpinned core (macOS has no `taskset`) on a shared machine, each pass gated
+  on a one-minute load below 8; two passes and a repeat of the first.
+  **16 of 24 rows within 5% of FFTW, faster on 12**. Behind it on complex
+  65,536 (1.27×), RFFT 256 (1.18×), 65,536 (1.18×) and 2²⁰ (1.14×), and 2-D
+  64² to 1024² except 512² (1.18–1.28×); ahead on the composites (0.86–0.94×),
+  the primes (0.57, 0.85) and complex 2²⁰ (0.87×). At or above numpy.fft on
+  24 of 24 rows and scipy.fft on 23 (2-D 256², 1.22). The repeat moves four
+  large rows by 13–16%, so rows near the line are not settled. The arm64
+  kernels were tuned on Neoverse-N1; these are open defects on the M4. Raw
+  data: [`arm64-m4-20261102-v0.28.9/`](https://github.com/go-fft/fft/tree/main/benchmarks/results/arm64-m4-20261102-v0.28.9/).
 * **Single precision:** float32 takes 0.46–0.83× the float64 time on Zen 3 and
   0.58–0.73× on Neoverse-N1. FFTW's single-precision library is not built on
   the hosts, so there is no float32 comparison with it.
