@@ -346,6 +346,18 @@ v0.26.1).
   large rows by 13–16%, so rows near the line are not settled. The arm64
   kernels were tuned on Neoverse-N1; these are open defects on the M4. Raw
   data: [`arm64-m4-20261102-v0.28.9/`](https://github.com/go-fft/fft/tree/main/benchmarks/results/arm64-m4-20261102-v0.28.9/).
+* **Apple M4 Max at v0.28.11 (2026-11-02):** the complex 65,536 gap was the
+  576-byte gap between the destination and the scratch buffer, which costs
+  Apple Silicon a fifth of the time from 65,536 points (a false store-to-load
+  dependence). It is 4,032 bytes on darwin/arm64 since v0.28.11, and the row
+  went from 1.27× to about **1.07–1.09×** of FFTW, still unsettled (the
+  drift control moves such rows by 13–16%). Complex 2²⁰ is **0.80–0.86×**.
+  The RFFT 256, 65,536 and 2²⁰ rows and the 2-D rows are unchanged. FFTW
+  runs one leaf codelet per axis there (`n1fv_64`, `n1fv_128`,
+  `hc2cfdftv_32`), while go-fft's NEON passes stop at radix 8, so it makes
+  more passes and more loads and stores; a radix-16/32/64 NEON pass is the
+  open lever. Load at measurement 5.4–7.5. Data:
+  [`arm64-m4-gap-20261102/`](https://github.com/go-fft/fft/tree/main/benchmarks/results/arm64-m4-gap-20261102/).
 * **Single precision:** float32 takes 0.46–0.83× the float64 time on Zen 3 and
   0.58–0.73× on Neoverse-N1. FFTW's single-precision library is not built on
   the hosts, so there is no float32 comparison with it.
