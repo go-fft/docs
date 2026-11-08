@@ -69,7 +69,8 @@ p := fft.NewPlanWith(1024, fft.Options{FMA: true})
 
 Use it when bit-for-bit reproducibility across machines does not matter.
 Measured gains against the default plan: Cascade Lake complex 1,024 1.22×
-(0.94× FFTW's time, against 1.19× by default), 2,048 1.11×, RFFT 4,096 1.09×,
+(0.94× FFTW's time, against 1.19× by default; re-measured 2026-11-07 at
+v0.28.11: 1.03× against 1.24×), 2,048 1.11×, RFFT 4,096 1.09×,
 256 and 512 1.07–1.08×; Zen 3 1–6% (complex 1,024 stays 1.10× FFTW's time).
 Where fusing measured slower (Cascade Lake 4,096 to 16,384 points) the plan
 keeps the default kernels, so no measured row is slower than the default. See
