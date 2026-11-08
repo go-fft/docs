@@ -238,6 +238,42 @@ FFTW over the same two runs
 | 2-D 512×512 | 3,121,416 | 6,985,524 | **0.45** | 5,666,574 | 4,091,785 |
 | 2-D 1024×1024 | 17,485,117 | 44,525,113 | **0.39** | 26,170,156 | 20,891,855 |
 
+## AMD Zen 4 (Ryzen 9 7950X), AVX-512, with hardware counters
+
+A bare-metal Ryzen 9 7950X (Zen 4, 16 cores), the first x86 host here with a
+readable PMU (`perf stat`, AMD IBS); measured 2026-11-08, one pinned core (its
+SMT sibling idle), complex transforms only, interleaved rounds, median of
+seven. FFTW 3.3.10 built from source twice, with and without AVX-512 (its
+1,024 plan is `t1fv_32_avx512` + `n2fv_32_avx2`, or `t1fv_32_avx2` +
+`n2fv_32_avx2`). No numpy on the host, so this is not a full sweep. Raw files
+and counters:
+[`amd64-zen4-fractal-20261108/`](https://github.com/go-fft/fft/tree/main/benchmarks/results/amd64-zen4-fractal-20261108/).
+
+go-fft time ÷ FFTW time (below 1 is faster). v0.28.11 ran the Cascade Lake route
+on this CPU; v0.28.12 runs Zen 3's up to 65,536 points:
+
+| complex | v0.28.11 ÷ FFTW AVX2 build | v0.28.12 ÷ FFTW AVX2 build | v0.28.12 ÷ FFTW AVX-512 build |
+|--:|--:|--:|--:|
+| 256 | 1.43 | 1.13 | 1.29 |
+| 1,024 | 1.31 | 1.14 | 1.31 |
+| 4,096 | 1.00 | **0.93** | 1.06 |
+| 65,536 | **0.88** | **0.87** | **0.98** |
+| 1,048,576 | 1.07 | 1.07 | 1.07 |
+
+Why: a Zen 4 core runs a 512-bit operation as two 256-bit halves. At complex
+1,024 the AVX-512 passes retired 13,922 instructions in 5,961 cycles (IPC
+2.34); the AVX2 ones with the split layout 18,437 in 5,166 (IPC 3.57), FFTW's
+AVX2 plan 17,588 in 4,471 (IPC 3.93). The wide passes save instructions, not
+pipe time, and stalled the floating-point scheduler 3.6 times as often (2,947
+against 809 token stalls per transform); IBS put 77% of their samples in the
+final radix-8 pass. The 4,039 64-byte-split loads per transform that looked
+like misalignment are every 512-bit load, and aligning the twiddle tables
+changed nothing. v0.28.12 / v0.28.11 on this CPU: complex 256 1.26, 1,024
+1.15, 4,096 1.07, 16,384 1.13, 1,000 1.13, 1,296 1.12; above 65,536 points
+the AVX-512 route stays, 3–12% faster there, and nothing changes. What is left
+at 1,024 is FFTW's IPC (1.14× = 1.05× instructions × 1.10× IPC, with twice the
+L1D fills from L2), as on Zen 3.
+
 ## Intel Xeon (Cascade Lake), AVX-512
 
 cfarm151, 8 vCPUs, a VM shared with other users; measured 2026-11-07 at the
