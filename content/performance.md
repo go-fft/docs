@@ -274,6 +274,22 @@ the AVX-512 route stays, 3–12% faster there, and nothing changes. What is left
 at 1,024 is FFTW's IPC (1.14× = 1.05× instructions × 1.10× IPC, with twice the
 L1D fills from L2), as on Zen 3.
 
+Round 51 (v0.28.14, 2026-11-08, load 0.3–0.9) asked why the AVX-512 route
+stalls. IBS finds no single stalling instruction: the final pass is flat, a
+third of it the 24 `VINSERTF32X4` that gather four blocks into a register, each
+one uop on FP1/2 at one per cycle on Zen 4 (uops.info). Rewriting the gather
+(masked loads 1,185 ns against 1,103, 256-bit halves 1,075, no gather at all
+1,034) moves the transform by at most 6%, so it is not the cause; the AVX2
+route's split layout is. The 256-bit-halves kernel lost 3–4.6% at 256 to 1,024
+points on Cascade Lake, so it is not shipped. What is shipped: on a Zen 4,
+65,536, 131,072 and 262,144 points take the 512-bit split layout, Cascade Lake's
+route (bit-identical), 1.065, 1.034 and 1.026 times faster than before; every
+other power of two from 256 to 2^20 ties or loses on it and keeps its route.
+Against FFTW's AVX-512 build, the fastest on this CPU: 65,536 0.94 to 0.88,
+131,072 0.92 to 0.90, 262,144 0.86 to 0.84; 256 (1.26) and 1,024 (1.30) do not
+move. Raw files:
+[`amd64-zen4-fractal-20261108-round51/`](https://github.com/go-fft/fft/tree/main/benchmarks/results/amd64-zen4-fractal-20261108-round51/).
+
 ## Intel Xeon (Cascade Lake), AVX-512
 
 cfarm151, 8 vCPUs, a VM shared with other users; measured 2026-11-07 at the
