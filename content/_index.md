@@ -38,6 +38,7 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | Multi-dimensional | `FFTN`, `IFFTN`, `FFT2`, `IFFT2`, `RFFT2`, `IRFFT2`, `RFFTN`, `IRFFTN` |
 | numpy's `n`, `norm`, `axes` | `FFTWith`, `IFFTWith`, `RFFTWith`, `IRFFTWith`, `FFTNWith`, `RFFTNWith`, … taking an `Options{N, Norm, Axes}` |
 | Opt-in fused multiply-add (v0.28.0) | `Options{FMA: true}` for every `...With` function, and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`, `NewRealPlan2With` (see below) |
+| Reproducible bits (next release) | `Options{Exact: true}`, the reference arithmetic, for every `...With` function and the plan constructors (see below) |
 | DCT / DST (scipy.fft) | `DCT`, `IDCT`, `DST`, `IDST`, `DCTN`, `IDCTN`, `DSTN`, `IDSTN` (types I–IV) |
 | Single precision | every function above with `32` appended (`_32` after a digit): `FFT32`, `RFFT32`, `FFTN32`, `FFT2_32`, `RFFTN32`, `FFT32With`, `HFFT32`, `DCT32`, … |
 | Shifts and lengths | `FFTShift`, `IFFTShift`, `FFTShiftN`, `IFFTShiftN`, `NextFastLen` |
@@ -75,6 +76,30 @@ v0.28.11: 1.03× against 1.24×), 2,048 1.11×, RFFT 4,096 1.09×,
 Where fusing measured slower (Cascade Lake 4,096 to 16,384 points) the plan
 keeps the default kernels, so no measured row is slower than the default. See
 [Performance](performance/).
+
+### Reproducible bits (`Options.Exact`, unreleased)
+
+go-fft's contract is an error bound against an extended-precision result: the
+relative RMS error is at most `c·ε·log2(n)`, with `c` between 0.5 and 2 per
+function family (the worst measured is 0.95), checked against a double-double
+oracle in both precisions, with and without `Options.FMA`; it is not bit
+identity with another implementation. `Options{Exact: true}` names the
+package's reference arithmetic for callers who need the last bits to be
+reproducible: separately rounded multiplies and adds, no fused multiply-add,
+the reference's order of operations. Every `...With` function (float32
+included) and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`,
+`NewRealPlan2With` accept it; it excludes `FMA` (both set panics).
+
+```go
+X := fft.FFTWith(x, fft.Options{Exact: true})
+p := fft.NewPlanWith(1024, fft.Options{Exact: true})
+```
+
+Today the default is this arithmetic, so `Exact` changes nothing. A later
+release may let the default fuse multiply-adds or reorder its kernels inside
+the bound; `Exact` keeps the reference bits available whatever the default
+becomes. The constants and the method are in the repository's
+[docs/accuracy.md](https://github.com/go-fft/fft/blob/main/docs/accuracy.md).
 
 ### Reusable plans
 
