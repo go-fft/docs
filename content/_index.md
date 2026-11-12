@@ -38,14 +38,15 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | Multi-dimensional | `FFTN`, `IFFTN`, `FFT2`, `IFFT2`, `RFFT2`, `IRFFT2`, `RFFTN`, `IRFFTN` |
 | numpy's `n`, `norm`, `axes` | `FFTWith`, `IFFTWith`, `RFFTWith`, `IRFFTWith`, `FFTNWith`, `RFFTNWith`, … taking an `Options{N, Norm, Axes}` |
 | Opt-in fused multiply-add (v0.28.0) | `Options{FMA: true}` for every `...With` function, and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`, `NewRealPlan2With` (see below) |
-| Reproducible bits (next release) | `Options{Exact: true}`, the reference arithmetic, for every `...With` function and the plan constructors (see below) |
+| Reproducible bits (v0.29.0) | `Options{Exact: true}`, the reference arithmetic, for every `...With` function and the plan constructors (see below) |
 | DCT / DST (scipy.fft) | `DCT`, `IDCT`, `DST`, `IDST`, `DCTN`, `IDCTN`, `DSTN`, `IDSTN` (types I–IV) |
+| MDCT / IMDCT (audio codecs, v0.29.0) | `NewMDCTPlan(n)` and `NewMDCTPlan32(n)`: `n` samples (even) to `n/2` coefficients and back, `MDCT(dst, src, scale)` and `IMDCT(dst, src, scale)`, 0 allocations; `SineWindow`, `KBDWindow`. The definition is the Wikipedia article's (unscaled); windowed overlap-add reconstructs the input when the two scales multiply to `2/(n/2)`. Error at most 1.75·ε·log2 n (float64) against a double-double oracle |
 | Single precision | every function above with `32` appended (`_32` after a digit): `FFT32`, `RFFT32`, `FFTN32`, `FFT2_32`, `RFFTN32`, `FFT32With`, `HFFT32`, `DCT32`, … |
 | Shifts and lengths | `FFTShift`, `IFFTShift`, `FFTShiftN`, `IFFTShiftN`, `NextFastLen` |
 | Frequency bins | `FFTFreq`, `RFFTFreq` |
-| Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett` |
+| Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett`, `SineWindow`, `KBDWindow` |
 | Spectral | `PSD`, `Spectrogram` |
-| Reusable plans | `NewPlan`, `NewRealPlan`, `NewPlanN`, `NewRealPlan2`, `NewDCTPlan`, `NewDSTPlan`, and their float32 twins (`NewPlan32`, `NewRealPlan32`, `NewPlanN32`, `NewRealPlan2_32`, `NewDCTPlan32`, `NewDSTPlan32`) |
+| Reusable plans | `NewPlan`, `NewRealPlan`, `NewPlanN`, `NewRealPlan2`, `NewDCTPlan`, `NewDSTPlan`, `NewMDCTPlan`, and their float32 twins (`NewPlan32`, `NewRealPlan32`, `NewPlanN32`, `NewRealPlan2_32`, `NewDCTPlan32`, `NewDSTPlan32`, `NewMDCTPlan32`) |
 
 Normalization (`Norm`: `NormBackward`, the default, `NormOrtho`, `NormForward`),
 bin layout and frequency conventions follow `numpy.fft`; the DCT and DST follow
@@ -80,7 +81,7 @@ Where fusing measured slower (Cascade Lake 4,096 to 16,384 points) the plan
 keeps the default kernels, so no measured row is slower than the default. See
 [Performance](performance/).
 
-### Reproducible bits (`Options.Exact`, unreleased)
+### Reproducible bits (`Options.Exact`, v0.29.0)
 
 go-fft's contract is an error bound against an extended-precision result: the
 relative RMS error is at most `c·ε·log2(n)`, with `c` between 0.5 and 2.25 per
