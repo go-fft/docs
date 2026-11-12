@@ -40,7 +40,7 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | Opt-in fused multiply-add (v0.28.0) | `Options{FMA: true}` for every `...With` function, and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`, `NewRealPlan2With` (see below) |
 | Reproducible bits (next release) | `Options{Exact: true}`, the reference arithmetic, for every `...With` function and the plan constructors (see below) |
 | DCT / DST (scipy.fft) | `DCT`, `IDCT`, `DST`, `IDST`, `DCTN`, `IDCTN`, `DSTN`, `IDSTN` (types I–IV) |
-| MDCT / IMDCT (audio codecs) | `NewMDCTPlan(n)` and `NewMDCTPlan32(n)`: `n` samples (even) to `n/2` coefficients and back, `MDCT(dst, src, scale)` and `IMDCT(dst, src, scale)`, 0 allocations; `SineWindow`, `KBDWindow`. The definition is the Wikipedia article's (unscaled); windowed overlap-add reconstructs the input when the two scales multiply to `2/(n/2)`. Error at most 1.75·ε·log2 n (float64) against a double-double oracle |
+| MDCT / IMDCT (audio codecs, v0.29.0) | `NewMDCTPlan(n)` and `NewMDCTPlan32(n)`: `n` samples (even) to `n/2` coefficients and back, `MDCT(dst, src, scale)` and `IMDCT(dst, src, scale)`, 0 allocations; `SineWindow`, `KBDWindow`. The definition is the Wikipedia article's (unscaled); windowed overlap-add reconstructs the input when the two scales multiply to `2/(n/2)`. Error at most 1.75·ε·log2 n (float64) against a double-double oracle |
 | Single precision | every function above with `32` appended (`_32` after a digit): `FFT32`, `RFFT32`, `FFTN32`, `FFT2_32`, `RFFTN32`, `FFT32With`, `HFFT32`, `DCT32`, … |
 | Shifts and lengths | `FFTShift`, `IFFTShift`, `FFTShiftN`, `IFFTShiftN`, `NextFastLen` |
 | Frequency bins | `FFTFreq`, `RFFTFreq` |
