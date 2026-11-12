@@ -87,9 +87,11 @@ against a double-double oracle in both precisions, with and without
 `Options{Exact: true}` names the package's reference arithmetic for callers
 who need the last bits to be reproducible: the reference arithmetic as
 compiled by gc (the SIMD kernels round every multiply and add separately; on
-arm64 gc fuses multiply-adds in the Go reference, so the bits are the same on
-every CPU of one architecture, not between amd64 and arm64), in the
-reference's order of operations, the bits of v0.28.16. Every `...With` function (float32
+arm64 gc fuses multiply-adds in the Go reference, so amd64 and arm64 differ),
+in the reference's order of operations: the bits of v0.28.16 on the same
+machine. It does not promise the same bits on every CPU, because v0.28.16
+itself gave different bits on different amd64 CPUs for some lengths
+([#121](https://github.com/go-fft/fft/issues/121)). Every `...With` function (float32
 included) and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`,
 `NewRealPlan2With` accept it; it excludes `FMA` (both set panics).
 
