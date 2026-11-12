@@ -80,13 +80,16 @@ keeps the default kernels, so no measured row is slower than the default. See
 ### Reproducible bits (`Options.Exact`, unreleased)
 
 go-fft's contract is an error bound against an extended-precision result: the
-relative RMS error is at most `c·ε·log2(n)`, with `c` between 0.5 and 2 per
-function family (the worst measured is 0.95), checked against a double-double
-oracle in both precisions, with and without `Options.FMA`; it is not bit
-identity with another implementation. `Options{Exact: true}` names the
-package's reference arithmetic for callers who need the last bits to be
-reproducible: separately rounded multiplies and adds, no fused multiply-add,
-the reference's order of operations. Every `...With` function (float32
+relative RMS error is at most `c·ε·log2(n)`, with `c` between 0.5 and 2.25 per
+function family (measured, not proved; the worst ratio seen is 1.03), checked
+against a double-double oracle in both precisions, with and without
+`Options.FMA`; it is not bit identity with another implementation.
+`Options{Exact: true}` names the package's reference arithmetic for callers
+who need the last bits to be reproducible: the reference arithmetic as
+compiled by gc (the SIMD kernels round every multiply and add separately; on
+arm64 gc fuses multiply-adds in the Go reference, so the bits are the same on
+every CPU of one architecture, not between amd64 and arm64), in the
+reference's order of operations, the bits of v0.28.16. Every `...With` function (float32
 included) and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`,
 `NewRealPlan2With` accept it; it excludes `FMA` (both set panics).
 
