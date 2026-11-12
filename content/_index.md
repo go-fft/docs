@@ -53,8 +53,11 @@ bin layout and frequency conventions follow `numpy.fft`; the DCT and DST follow
 
 ### Opt-in fused multiply-add (`Options.FMA`)
 
-By default every amd64 kernel is bit-identical to the package's Go code, so a
-result does not depend on the CPU that computed it. `Options{FMA: true}` gives
+By default every amd64 kernel is bit-identical to the package's Go code for the
+route it runs: the same machine and route give the same bits, and every route
+stays within the stated bound. Different amd64 CPUs can choose different routes
+for some lengths (165 of 417 cases differ at v0.28.16), so the bits are not
+promised to match across CPUs. `Options{FMA: true}` gives
 that up for speed on amd64 CPUs with FMA3: twiddle products and butterfly
 constants are fused, and on AVX-512 Intel CPUs (Cascade Lake) 1,024 and 2,048
 points take radix-32 passes. Results differ from the default's in the last
