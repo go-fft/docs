@@ -45,7 +45,7 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | Frequency bins | `FFTFreq`, `RFFTFreq` |
 | Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett`, `SineWindow`, `KBDWindow` |
 | Spectral | `PSD`, `Spectrogram` |
-| Reusable plans | `NewPlan`, `NewRealPlan`, `NewPlanN`, `NewRealPlan2`, `NewDCTPlan`, `NewDSTPlan`, and their float32 twins (`NewPlan32`, `NewRealPlan32`, `NewPlanN32`, `NewRealPlan2_32`, `NewDCTPlan32`, `NewDSTPlan32`) |
+| Reusable plans | `NewPlan`, `NewRealPlan`, `NewPlanN`, `NewRealPlan2`, `NewDCTPlan`, `NewDSTPlan`, `NewMDCTPlan`, and their float32 twins (`NewPlan32`, `NewRealPlan32`, `NewPlanN32`, `NewRealPlan2_32`, `NewDCTPlan32`, `NewDSTPlan32`, `NewMDCTPlan32`) |
 
 Normalization (`Norm`: `NormBackward`, the default, `NormOrtho`, `NormForward`),
 bin layout and frequency conventions follow `numpy.fft`; the DCT and DST follow
