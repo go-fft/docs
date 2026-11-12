@@ -39,10 +39,11 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | numpy's `n`, `norm`, `axes` | `FFTWith`, `IFFTWith`, `RFFTWith`, `IRFFTWith`, `FFTNWith`, `RFFTNWith`, … taking an `Options{N, Norm, Axes}` |
 | Opt-in fused multiply-add (v0.28.0) | `Options{FMA: true}` for every `...With` function, and `NewPlanWith`, `NewRealPlanWith`, `NewPlanNWith`, `NewRealPlan2With` (see below) |
 | DCT / DST (scipy.fft) | `DCT`, `IDCT`, `DST`, `IDST`, `DCTN`, `IDCTN`, `DSTN`, `IDSTN` (types I–IV) |
+| MDCT / IMDCT (audio codecs) | `NewMDCTPlan(n)` and `NewMDCTPlan32(n)`: `n` samples (even) to `n/2` coefficients and back, `MDCT(dst, src, scale)` and `IMDCT(dst, src, scale)`, 0 allocations; `SineWindow`, `KBDWindow`. The definition is the Wikipedia article's (unscaled); windowed overlap-add reconstructs the input when the two scales multiply to `2/(n/2)`. Error at most 1.75·ε·log2 n (float64) against a double-double oracle |
 | Single precision | every function above with `32` appended (`_32` after a digit): `FFT32`, `RFFT32`, `FFTN32`, `FFT2_32`, `RFFTN32`, `FFT32With`, `HFFT32`, `DCT32`, … |
 | Shifts and lengths | `FFTShift`, `IFFTShift`, `FFTShiftN`, `IFFTShiftN`, `NextFastLen` |
 | Frequency bins | `FFTFreq`, `RFFTFreq` |
-| Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett` |
+| Windows | `Hann`, `Hamming`, `Blackman`, `BlackmanHarris`, `Bartlett`, `SineWindow`, `KBDWindow` |
 | Spectral | `PSD`, `Spectrogram` |
 | Reusable plans | `NewPlan`, `NewRealPlan`, `NewPlanN`, `NewRealPlan2`, `NewDCTPlan`, `NewDSTPlan`, and their float32 twins (`NewPlan32`, `NewRealPlan32`, `NewPlanN32`, `NewRealPlan2_32`, `NewDCTPlan32`, `NewDSTPlan32`) |
 
