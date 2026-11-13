@@ -149,7 +149,9 @@ assembly) are validated bit-for-bit against the oracle.
   notes below.
 - The generators live in a **separate Go module**
   (`internal/kernels/asmgen/go.mod`, requiring `go-asmgen`), so the FFT library
-  itself keeps **zero third-party dependencies**. `go generate` (or the per-arch
+  itself has one dependency since v0.30.1,
+  [go-simd/floats](https://github.com/go-simd/floats) (see the home page), and
+  no generator dependency. `go generate` (or the per-arch
   CI job) regenerates the committed `.s` and CI fails if it is stale.
 
 ### Bit-identity decides which arches ship a kernel (correctness over coverage)
