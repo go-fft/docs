@@ -41,6 +41,7 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | Reproducible bits (v0.29.0) | `Options{Exact: true}`, the reference arithmetic, for every `...With` function and the plan constructors (see below) |
 | DCT / DST (scipy.fft) | `DCT`, `IDCT`, `DST`, `IDST`, `DCTN`, `IDCTN`, `DSTN`, `IDSTN` (types I–IV) |
 | MDCT / IMDCT (audio codecs, v0.29.0) | `NewMDCTPlan(n)` and `NewMDCTPlan32(n)`: `n` samples (even) to `n/2` coefficients and back, `MDCT(dst, src, scale)` and `IMDCT(dst, src, scale)`, 0 allocations; `SineWindow`, `KBDWindow`. The definition is the Wikipedia article's (unscaled); windowed overlap-add reconstructs the input when the two scales multiply to `2/(n/2)`. Error at most 1.75·ε·log2 n (float64) against a double-double oracle |
+| Float32 data, float64 arithmetic (v0.30.0) | `(*MDCTPlan).MDCTMixed(dst, src []float32, scale float64)` and `IMDCTMixed`; `(*DCTPlan).DCTMixed(dst, src []float32, norm Norm)` and `IDCTMixed` for a DCT-IV plan (see below) |
 | Single precision | every function above with `32` appended (`_32` after a digit): `FFT32`, `RFFT32`, `FFTN32`, `FFT2_32`, `RFFTN32`, `FFT32With`, `HFFT32`, `DCT32`, … |
 | Shifts and lengths | `FFTShift`, `IFFTShift`, `FFTShiftN`, `IFFTShiftN`, `NextFastLen` |
 | Frequency bins | `FFTFreq`, `RFFTFreq` |
@@ -109,6 +110,62 @@ release may let the default fuse multiply-adds or reorder its kernels inside
 the bound; `Exact` keeps the reference bits available whatever the default
 becomes. The constants and the method are in the repository's
 [docs/accuracy.md](https://github.com/go-fft/fft/blob/main/docs/accuracy.md).
+
+### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
+
+An audio codec holds its samples and coefficients in `float32`, and a float32
+MDCT plan computes in float32: its worst relative RMS error measured at 1.9e-7,
+short of what some codecs need. The mixed methods are on the existing float64
+plans (no new plan type): `MDCTPlan.MDCTMixed` and `IMDCTMixed`, and, for a
+DCT-IV plan, `DCTPlan.DCTMixed` and `IDCTMixed` (any other DCT type panics
+with an `fft:` message). The `float32` input is converted to `float64` while
+the pre-twiddle reads it, together with the MDCT's fold; the arithmetic is
+float64; the single rounding to `float32` happens while the post-twiddle
+writes, together with the unfold. There is no extra pass and no allocation, `dst` may overlap
+`src`, and the plans stay safe for concurrent use. The result is exactly
+`float32` of the float64 path, bit for bit (asserted by `TestMixedIsFloat32OfFloat64`
+and a fuzz target). `scale` is a `float64`, as in `MDCT`.
+
+```go
+p := fft.NewMDCTPlan(2048)
+p.MDCTMixed(coef, samples, scale) // float32 in and out, float64 inside
+```
+
+The name says what it is: the `...32` suffix in this package means float32
+*arithmetic* (`DCT32`, `MDCTPlan32`), so a `DCT32` method on a float64 plan
+would say the opposite.
+
+Accuracy, in relative RMS against the double-double oracle:
+`err <= c64·ε64·log2 n + ε32/2`.
+
+| Transform | c64 | Worst error, as a fraction of the bound |
+|:--|--:|--:|
+| MDCT | 1.75 | 0.56 |
+| DCT-IV | 2.0 | 0.84 |
+
+Time per call (Apple M4 Max, one core, ns; from go-fft#143):
+
+| | mixed | float64 + two manual conversions | float32 plan |
+|:--|--:|--:|--:|
+| DCT-IV, M = 128 | 156 | 226 | 164 |
+| DCT-IV, M = 1024 | 1204 | 1704 | 1159 |
+| MDCT, N = 256 | 172 | 278 | 161 |
+| IMDCT, N = 256 | 178 | 284 | 166 |
+| MDCT, N = 2048 | 1402 | 2147 | 1199 |
+| IMDCT, N = 2048 | 1409 | 2187 | 1215 |
+
+The mixed methods are 29 to 38 percent faster than float64 with manual
+conversions, and take 1.0 to 1.17 times the float32 plan's time while keeping
+float64 accuracy.
+
+The MDCT itself got faster in v0.29.1 (go-fft#136): for an even `n/2` it fuses
+the fold into the DCT-IV's pre-twiddle and the unfold into its post-twiddle,
+with one scratch of `n/4` complex values, and a one-slot scratch cache sits in
+front of the `sync.Pool`. MDCT / IMDCT at 128 samples went from 143 / 133 ns to
+96 / 93 (FFTW's REDFT11 plus the same fold: 87 / 87), at 256 from 231 / 228 to
+163 / 169 (162 / 165), at 2,048 from 1,715 / 1,689 to 1,331 / 1,344 (1,770 /
+1,700); float32 at 128 from 125 / 124 to 80 / 85. The float64 MDCT at 128
+samples is still 1.07 to 1.10 times FFTW's time.
 
 ### Reusable plans
 
