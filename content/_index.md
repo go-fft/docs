@@ -209,8 +209,41 @@ IMDCT 0 to 5 percent (its unfold is still a Go loop). Against FFTW the DCT-IV
 is 1.12 times at 64 points, level at 128 and faster from 256 on; the forward
 MDCT is level at 128 and 256 and faster at 2,048; the IMDCT is 1.11 times
 FFTW's time at 128 samples (98.1 against 88.1 ns), level at 256 and faster at
-2,048. AMD Zen 4 was not
-measured; the AVX2 kernels are checked by CI and under qemu.
+2,048. On an AMD Ryzen 9 7950X (Zen 4; one core, AVX2 kernels, against FFTW
+3.3.10's AVX-512 build, v0.30.1; method and the complete table with scipy in
+[go-fft#132](https://github.com/go-fft/fft/issues/132#issuecomment-6863019790))
+the DCT-IV at 64, 128, 256 and 1,024 points takes 61, 102, 182
+and 762 ns against FFTW's 88, 177, 555 and 2,130, the MDCT at 128 samples 85
+ns against 105, and the IMDCT 91 against 113; go-fft is faster than FFTW on
+every row measured there.
+
+#### MDCT fold/unfold kernels and a faster Spectrogram (v0.30.2)
+
+- **MDCT and IMDCT.** The fold (before the DCT-IV's gather) and the unfold
+  (after its scatter) now run the go-simd/floats v0.19.0 kernels `MDCTFold` and
+  `MDCTUnfold` (and the float32-data forms for the Mixed methods): the MDCT
+  from 512 to 4,096 samples, the IMDCT from 256 to 4,096. Outside those
+  windows the fused Go loops stay, because they are faster or equal (at 128
+  samples) or the kernels lose 3 to 7 percent (from 6,144 samples). On an
+  Apple M4 Max (6 interleaved rounds at load 5.5 to 7.6, against v0.30.1)
+  the MDCT / IMDCT times are 0.94 / 0.93 of v0.30.1's at 512 samples, 0.91 /
+  0.92 at 1,024, 0.92 / 0.90 at 2,048 and 0.97 / 0.97 at 4,096 (the IMDCT
+  also 0.94 at 256 and 384); at 128, 6,144 and 8,192, outside the window, the
+  medians are within 4 percent of v0.30.1's. `MDCTPlan32` computes in float32 and
+  keeps its Go loops. The kernels fuse multiply-adds, so the bits differ in the
+  last places inside the stated bound.
+- **`Spectrogram`.** The window multiply uses `floats.Mul` and the power pass
+  `floats.SquaredMagnitude` (go-simd/floats v0.20.0). For 16,384 samples,
+  segment 256, overlap 128, one core: Zen 4 28.0 µs, from 38.8, against FFTW
+  3.3.10's `many_dft_r2c` at 25.4 (1.10 times, from 1.53); Apple M4 Max 40.8
+  µs, from 51.4. The gap is the real FFTs (16.6 µs) and the result allocation
+  (4.6 µs). The gain on x86 comes from `Mul` and `SquaredMagnitude`: a third
+  path that folds the window into the real-FFT packing gather exists, but it
+  only runs on loong64 and s390x (and above the Stockham ceiling), so it is
+  not what speeds up amd64 or arm64. On amd64 about 16 percent of the power
+  values differ by one ulp from before, because the kernel uses FMA; arm64 is
+  bit-identical. `PSD` and `Spectrogram` stay inside the `psd` row of the
+  accuracy bound.
 
 ### Reusable plans
 
