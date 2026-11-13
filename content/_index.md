@@ -155,7 +155,7 @@ Time per call (Apple M4 Max, one core, ns; from go-fft#143):
 | IMDCT, N = 2048 | 1409 | 2187 | 1215 |
 
 The mixed methods are 29 to 38 percent faster than float64 with manual
-conversions, and take 1.0 to 1.17 times the float32 plan's time while keeping
+conversions, and take 0.95 to 1.17 times the float32 plan's time while keeping
 float64 accuracy.
 
 The MDCT itself got faster in v0.29.1 (go-fft#136): for an even `n/2` it fuses
