@@ -167,6 +167,51 @@ front of the `sync.Pool`. MDCT / IMDCT at 128 samples went from 143 / 133 ns to
 1,700); float32 at 128 from 125 / 124 to 80 / 85. The float64 MDCT at 128
 samples is still 1.07 to 1.10 times FFTW's time.
 
+#### SIMD twiddle passes and the first dependency (v0.30.1)
+
+The DCT-IV and DST-IV (and `DCTMixed`/`IDCTMixed`) run both their pre- and
+post-twiddle passes on the
+[go-simd/floats](https://github.com/go-simd/floats) v0.18.0 kernels
+(`CMulGather`, `CMulScatter` and the float32-data forms; NEON on arm64,
+AVX2+FMA on amd64, portable loops elsewhere), following the rule of one
+implementation in the lowest shared library. The MDCT and IMDCT (and their
+Mixed forms) use them for one of their two twiddle passes only: the
+post-twiddle for the MDCT, the pre-twiddle for the IMDCT; their other pass is
+the fold or the unfold, still a Go loop. go-fft's `go.mod` now requires
+`github.com/go-simd/floats v0.18.0` and, under it, `golang.org/x/sys` (CPU
+detection); govulncheck reports nothing. `DCTPlan32` and `MDCTPlan32` compute
+in float32 and are unchanged. The kernels fuse multiply-adds, so the default
+DCT, DST and MDCT bits changed in the last places, inside the stated bound.
+
+**`Options.Exact` does not cover the DCT, DST and MDCT plans**: they take no
+`Options`, and their twiddle passes are the SIMD kernels, so there is no exact
+mode for them yet (it is part of the third arithmetic of
+[go-fft#121](https://github.com/go-fft/fft/issues/121), step 3).
+
+Time per call (Apple M4 Max, one core, interleaved, ns, medians of 6; FFTW
+3.3.10 `REDFT11` in place plus the same fold, `FFTW_MEASURE`):
+
+| | v0.30.0 | v0.30.1 | FFTW |
+|:--|--:|--:|--:|
+| DCT-IV, M = 64 | 87.0 | 88.0 | 78.6 |
+| DCT-IV, M = 128 | 149.5 | 141.7 | 143.3 |
+| DCT-IV, M = 256 | 305.4 | 272.7 | 320.8 |
+| DCT-IV, M = 1024 | 1164 | 1038 | 1442 |
+| DCTMixed, M = 128 | 154.9 | 138.2 | |
+| DCTMixed, M = 1024 | 1218 | 1050 | |
+| MDCT / IMDCT, N = 128 | 91.4 / 97.9 | 87.0 / 98.1 | 87.4 / 88.1 |
+| MDCT / IMDCT, N = 256 | 165.4 / 174.8 | 158.2 / 170.7 | 165.8 / 169.5 |
+| MDCT / IMDCT, N = 2048 | 1346 / 1366 | 1258 / 1299 | 1715 / 1669 |
+
+The DCT-IV gains 0 percent at 64 points, 5 percent at 128, and 11 percent at
+256 and 1,024; the mixed form 9 to 14 percent; the MDCT 4 to 7 percent and the
+IMDCT 0 to 5 percent (its unfold is still a Go loop). Against FFTW the DCT-IV
+is 1.12 times at 64 points, level at 128 and faster from 256 on; the forward
+MDCT is level at 128 and 256 and faster at 2,048; the IMDCT is 1.11 times
+FFTW's time at 128 samples (98.1 against 88.1 ns), level at 256 and faster at
+2,048. AMD Zen 4 was not
+measured; the AVX2 kernels are checked by CI and under qemu.
+
 ### Reusable plans
 
 A plan computes the twiddle tables once and reuses them, so a transform does no
