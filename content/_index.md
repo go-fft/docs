@@ -169,11 +169,15 @@ samples is still 1.07 to 1.10 times FFTW's time.
 
 #### SIMD twiddle passes and the first dependency (v0.30.1)
 
-The DCT-IV, DST-IV, MDCT and Mixed pre- and post-twiddle passes run the
+The DCT-IV and DST-IV (and `DCTMixed`/`IDCTMixed`) run both their pre- and
+post-twiddle passes on the
 [go-simd/floats](https://github.com/go-simd/floats) v0.18.0 kernels
 (`CMulGather`, `CMulScatter` and the float32-data forms; NEON on arm64,
 AVX2+FMA on amd64, portable loops elsewhere), following the rule of one
-implementation in the lowest shared library. go-fft's `go.mod` now requires
+implementation in the lowest shared library. The MDCT and IMDCT (and their
+Mixed forms) use them for one of their two twiddle passes only: the
+post-twiddle for the MDCT, the pre-twiddle for the IMDCT; their other pass is
+the fold or the unfold, still a Go loop. go-fft's `go.mod` now requires
 `github.com/go-simd/floats v0.18.0` and, under it, `golang.org/x/sys` (CPU
 detection); govulncheck reports nothing. `DCTPlan32` and `MDCTPlan32` compute
 in float32 and are unchanged. The kernels fuse multiply-adds, so the default
@@ -202,8 +206,10 @@ Time per call (Apple M4 Max, one core, interleaved, ns, medians of 6; FFTW
 The DCT-IV gains 0 percent at 64 points, 5 percent at 128, and 11 percent at
 256 and 1,024; the mixed form 9 to 14 percent; the MDCT 4 to 7 percent and the
 IMDCT 0 to 5 percent (its unfold is still a Go loop). Against FFTW the DCT-IV
-is 1.12 times at 64 points, level at 128 and faster from 256 on; the
-MDCT/IMDCT are level at 128 and 256 and faster at 2,048. AMD Zen 4 was not
+is 1.12 times at 64 points, level at 128 and faster from 256 on; the forward
+MDCT is level at 128 and 256 and faster at 2,048; the IMDCT is 1.11 times
+FFTW's time at 128 samples (98.1 against 88.1 ns), level at 256 and faster at
+2,048. AMD Zen 4 was not
 measured; the AVX2 kernels are checked by CI and under qemu.
 
 ### Reusable plans
