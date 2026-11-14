@@ -59,7 +59,8 @@ bin layout and frequency conventions follow `numpy.fft`; the DCT and DST follow
 On amd64 CPUs with FMA3 the default arithmetic fuses multiply-adds: twiddle
 products and butterfly constants are fused, and on AVX-512 Intel CPUs (Cascade
 Lake) 1,024 and 2,048 points take radix-32 passes; on a Zen 4, complex 1,024
-takes two radix-32 passes (32·32). The results differ from the unfused
+takes two radix-32 passes (32·32), and since v0.32.1 complex 1,024 and 2,048
+run them on the 512-bit split layout (2,048 as 32·8·8). The results differ from the unfused
 arithmetic of v0.31.1 and before in the last bits and are as accurate: every
 transform stays inside the bound below, with the fused default as with the
 others (worst measured ratios on a Zen 4: c2c 0.69, r2c 0.77, c2cN 0.30, r2cN
@@ -99,6 +100,21 @@ rows sit at 0.99 to 1.03, at the noise level of that host. Earlier gains of the
 explicit option: Cascade Lake complex 1,024 1.22× (0.94× FFTW's time against
 1.19×), 2,048 1.11×, RFFT 4,096 1.09×, 256 and 512 1.07–1.08×; Zen 3 1–6%. See
 [Performance](performance/).
+
+**Zen 4, v0.32.1** ([go-fft#156](https://github.com/go-fft/fft/pull/156)): the
+fused plans of complex 1,024 and 2,048 take the 512-bit split route, where a
+radix-32 first pass has a kernel (off that route it has none and the pass ran
+in Go, which is why 2,048 as 32·8·8 once measured 4.8 times slower). On a
+Ryzen 9 7950X, one core, 15 interleaved rounds, medians: 1,024 points 909 to 860
+ns (0.946 of v0.32.0's time), 2,048 points 2,494 to 2,189 ns (0.878); 512 and
+4,096 are unchanged. Against FFTW's AVX-512 build (739 ns at 1,024 and 1,875 ns
+at 2,048, the v0.32.0 figures quoted in the same pull request) that is
+860 / 739 = 1.16 and 2,189 / 1,875 = 1.17, from 909 / 739 = 1.23 and
+2,494 / 1,875 = 1.33; the gap is not closed. A planner guard now keeps any plan
+from reaching a scalar radix-32 fallback, the Exact and NoFMA plans keep their
+route and bits, and Cascade Lake plans are unchanged. The bound holds on the new
+route: 1,024 and 2,048 points, forward and inverse, are within 0.12 of
+`ε·log2 n` against the double-double oracle, for a bound of 1.5.
 
 ### Reproducible bits (`Options.Exact`, v0.29.0)
 
