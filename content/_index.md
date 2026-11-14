@@ -33,7 +33,7 @@ on Intel CPUs with AVX-512 when an axis other than the last has a length 9·p
 | Area | Functions |
 | --- | --- |
 | Complex 1-D | `FFT`, `IFFT` |
-| Real 1-D | `RFFT`, `IRFFT`, `FFTReal` |
+| Real 1-D | `RFFT`, `IRFFT`, `FFTReal`, `FFTRealWith` (v0.31.0: numpy's `n` and `norm`, `FMA`, `Exact`) |
 | Hermitian 1-D | `HFFT`, `IHFFT` |
 | Multi-dimensional | `FFTN`, `IFFTN`, `FFT2`, `IFFT2`, `RFFT2`, `IRFFT2`, `RFFTN`, `IRFFTN` |
 | numpy's `n`, `norm`, `axes` | `FFTWith`, `IFFTWith`, `RFFTWith`, `IRFFTWith`, `FFTNWith`, `RFFTNWith`, … taking an `Options{N, Norm, Axes}` |
@@ -244,6 +244,48 @@ every row measured there.
   values differ by one ulp from before, because the kernel uses FMA; arm64 is
   bit-identical. `PSD` and `Spectrogram` stay inside the `psd` row of the
   accuracy bound.
+
+### `FFTReal` on the real transform, and odd lengths (v0.31.0)
+
+For an even length, `FFTReal` (the full complex spectrum of a real signal) now
+runs `RealPlan.RFFT` into the lower half of the one result slice and writes the
+conjugate mirror into the upper half, so the result is exactly Hermitian. Odd
+lengths keep promote-then-FFT. The new `FFTRealWith(x, Options)` takes numpy's
+`n` and `norm`, `FMA` and `Exact`; `Options.Exact` keeps promote-then-FFT bit
+for bit (the arithmetic `FFTReal` had before, now pinned by golden digests),
+and `FFTReal(x)` equals `FFTRealWith(x, Options{})`. `FFTReal` and `FFTRealWith`
+are in the `c2c` accuracy family: worst 0.61 of ε·log2 n against the
+double-double oracle, inside the row's bound of 1.5.
+
+Time per call on an AMD Ryzen 9 7950X (Zen 4, one core, ns), from
+[go-fft#147](https://github.com/go-fft/fft/pull/147). The Go rows include the
+result allocation (758 ns of the 1,024-point row); FFTW's rows are execute
+alone on preallocated arrays.
+
+| n | before | v0.31.0 | FFTW c2c on promoted data | FFTW r2c + mirror |
+|--:|--:|--:|--:|--:|
+| 256 | 513 | 410 | 245 | 212 |
+| 1000 | 2300 | 1620 | 1250 | 962 |
+| 1024 | 2320 | 1587 | 909 | 693 |
+| 4096 | 10650 | 6860 | 6140 | 3287 |
+
+At 1,024 points the transform is 530 ns and the mirror 210 ns, about 740 ns
+against FFTW's 693; with the allocation `FFTReal` is 1.75 times FFTW's c2c,
+down from 2.55, so the gap is not closed (an allocation-free form and a SIMD
+mirror kernel are the remaining levers).
+
+**A real-input algorithm for odd lengths is not needed.** go-fft's odd-length
+`RFFT` already beats FFTW's r2c, because it runs the complex plan (SIMD radix-3
+and radix-5 passes, Rader and Bluestein for primes) and keeps the lower half.
+Zen 4, one core, execute only, FFTW 3.3.10 r2c against `RealPlan.RFFT`
+([go-fft#116](https://github.com/go-fft/fft/issues/116#issuecomment-6863918426)):
+
+| n | FFTW r2c | go-fft | go-fft / FFTW |
+|--:|--:|--:|--:|
+| 1009 | 9540 | 7100 | 0.74 |
+| 1125 | 2390 | 2150 | 0.90 |
+| 2187 | 6280 | 5030 | 0.80 |
+| 3125 | 9720 | 6320 | 0.65 |
 
 ### Reusable plans
 
