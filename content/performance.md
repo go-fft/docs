@@ -61,7 +61,13 @@ rounds (what was tried, kept or dropped, and why) are in
 v0.27.x, so the tables below stand for it. It adds the opt-in FMA plans, whose
 column was measured separately (next section).
 
-## Opt-in FMA (`Options.FMA`, v0.28.0), measured
+> **Since v0.32.0 the fused arithmetic below is the default on amd64 with FMA3**
+> (`Options.NoFMA` turns it off, `Options.Exact` is the reference arithmetic);
+> the section keeps its name and its dated measurements, taken when `Options.FMA`
+> was an opt-in. The default-against-unfused tables of v0.32.0 are in
+> [go-fft#155](https://github.com/go-fft/fft/pull/155).
+
+## Fused multiply-add (`Options.FMA`, v0.28.0), measured
 
 Round 42 (2026-10-18/19, BENCHMARKS.md), the branch that became v0.28.0, two
 default and two FMA parity runs per host (`GOFFT_FMA=1`), go-fft time ÷ FFTW
