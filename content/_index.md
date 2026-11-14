@@ -274,6 +274,27 @@ against FFTW's 693; with the allocation `FFTReal` is 1.75 times FFTW's c2c,
 down from 2.55, so the gap is not closed (an allocation-free form and a SIMD
 mirror kernel are the remaining levers).
 
+Both levers landed in v0.31.1. `RealPlan.FFTReal(dst, src)` writes the full
+spectrum into the caller's slice and allocates nothing (`src` and `dst` need at
+least `Len()` elements; the package function `FFTReal` calls it), and the
+conjugate mirror runs `floats.ConjReverse` from go-simd/floats v0.21.0 (NEON
+and AVX2; it only copies and negates, so the bits are unchanged). The
+numbers below are the table of
+[go-fft#153](https://github.com/go-fft/fft/pull/153) (Zen 4, one core, ns per
+call, medians of 6 samples); the reference is FFTW's fastest way to the same
+result, r2c plus the mirror:
+
+| n | `RealPlan.FFTReal` before | v0.31.1 | `RFFT` alone | FFTW r2c + mirror | ratio |
+|--:|--:|--:|--:|--:|--:|
+| 256 | 183 | 146 | 127 | 161 | 0.90 |
+| 1024 | 762 | 608 | 533 | 670 | 0.91 |
+| 4096 | 4098 | 3605 | 3206 | 3235 | 1.11 |
+
+go-fft is under FFTW at 256 and 1,024 points and 1.11 times it at 4,096, where
+the real transform alone takes 3,206 ns of the 3,235 FFTW spends on transform
+and mirror together (the mirror is 390 ns there); that gap is the 4,096-point
+`RFFT` itself, tracked in [go-fft#122](https://github.com/go-fft/fft/issues/122).
+
 **A real-input algorithm for odd lengths is not needed.** go-fft's odd-length
 `RFFT` already beats FFTW's r2c, because it runs the complex plan (SIMD radix-3
 and radix-5 passes, Rader and Bluestein for primes) and keeps the lower half.
