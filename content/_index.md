@@ -277,7 +277,8 @@ are aligned in place inside static arrays, with no heap allocation at init. Zen
 | `RFFT` 4,096 | 2,789 | 2,502 | 2,493 |
 
 Complex 2,048 goes from 1.22 times FFTW's time to 1.00, and `RFFT` 4,096 from
-1.12 to 1.00, closing [go-fft#122](https://github.com/go-fft/fft/issues/122).
+1.12 to 1.00 (the `RFFT` 4,096 gap tracked in
+[go-fft#122](https://github.com/go-fft/fft/issues/122)).
 The 1.17 quoted for 2,048 under v0.32.1 above is that release's figure.
 
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
