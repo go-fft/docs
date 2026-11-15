@@ -116,6 +116,26 @@ route and bits, and Cascade Lake plans are unchanged. The bound holds on the new
 route: 1,024 and 2,048 points, forward and inverse, are within 0.12 of
 `ε·log2 n` against the double-double oracle, for a bound of 1.5.
 
+### Fused DCT-IV(64) and the pair API on arm64 (v0.33.0)
+
+v0.33.0 ([go-fft#157](https://github.com/go-fft/fft/pull/157)) adds a fused
+DCT-IV of 64 points on arm64, used by `DCT`, `IDCT`, `DCTMixed` and `IDCTMixed`;
+other architectures are unchanged. It also adds a pair API on `DCTPlan`:
+`DCTPair`, `IDCTPair`, `DCTMixedPair` and `IDCTMixedPair`, each running two
+transforms in one NEON kernel. The pair results lie within the same error bound
+as `DCT`; they are not bit-identical to two `DCT` calls in float64. The motivating
+consumer is [go-avkit/decode#77](https://github.com/go-avkit/decode/issues/77)
+(HE-AAC v2 QMF).
+
+Apple M4 Max, one core, ns per call (source: go-fft#157):
+
+| | Before | After |
+|:--|--:|--:|
+| `DCT` 64, float64 | 88 | 43.7 |
+| `DCTMixed` | 81.5 | 52.6 |
+| 2 × `DCT` | 175 | 60.6 (`DCTPair`) |
+| 2 × `DCTMixed` | 166 | 71.3 (`DCTMixedPair`) |
+
 ### Reproducible bits (`Options.Exact`, v0.29.0)
 
 go-fft's contract is an error bound against an extended-precision result: the
