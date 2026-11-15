@@ -318,6 +318,40 @@ call:
 
 At 1,125 points that is 1.78 times FFTW's time, down to 1.13.
 
+### Fused complex64 kernels, 64 to 8,192 points (v0.40.0)
+
+v0.40.0 is a MINOR release ([go-fft#171](https://github.com/go-fft/fft/pull/171),
+baseline and diagnosis in [go-fft#162](https://github.com/go-fft/fft/issues/162)):
+the fused two-pass AVX-512 kernels, in single precision (eight complex64 per
+register), for 64, 128, 256, 512, 1,024, 2,048, 4,096 and 8,192 points, on a Zen
+4 and on an Intel Cascade Lake (steppings 5 to 7), under the Default and FMA
+plans. `Options.Exact` and `Options.NoFMA` keep the old path, as do the N-D, 2-D
+real, DCT, DST and MDCT plans. The bits of complex64 change on those CPUs,
+within the bound. The twiddles are correctly rounded once to float32, and the
+tables are aligned lazily, so a complex128-only program does not carry the
+complex64 tables (a small `fft.FFT` program is 518 KB smaller).
+
+Speed against v0.39.0: 0.47 to 0.72 of its time on a Zen 4, 0.43 to 0.66 on a
+Cascade Lake. Zen 4 (Ryzen 9 7950X), one core, `Plan32.FFT`, medians of 5
+rounds against FFTW 3.3.10's AVX-512 single-precision build (source: go-fft#171),
+ns per transform:
+
+| complex64 | v0.39.0 | v0.40.0 | v0.40.0 / v0.39.0 | FFTW | v0.40.0 / FFTW |
+|:--|--:|--:|--:|--:|--:|
+| 64 | 40.1, 41.3 | 28.2, 28.9 | 0.70 | 22.1, 22.6 | 1.28 |
+| 128 | 72.8, 75.1 | 43.2, 44.2 | 0.59 | 38.5, 39.6 | 1.12 |
+| 256 | 128.4, 132.2 | 82.3, 84.9 | 0.64 | 76.3, 78.3 | 1.08 |
+| 512 | 253.9, 260.2 | 168.4, 175.1 | 0.66 | 165.3, 170.2 | 1.02 |
+| 1,024 | 563.1, 581.0 | 367.6, 380.8 | 0.65 | 380.3, 392.8 | 0.97 |
+| 2,048 | 1,293, 1,327 | 925.0, 953.7 | 0.72 | 884.6, 901.7 | 1.05 |
+| 4,096 | 4,578, 4,686 | 2,170, 2,228 | 0.47 | 2,277, 2,232 | 0.95 to 1.00 |
+| 8,192 | 8,568, 8,821 | 5,221, 5,307 | 0.61 | 7,221, 7,154 | 0.72 to 0.74 |
+
+Sizes 64, 128, 256 and 2,048 are still above 1.05 times FFTW's time. On the
+Cascade Lake (cfarm151, stepping 5) the kernels take, of the old plans' time:
+64 0.49, 128 0.43, 256 0.47, 512 0.53, 1,024 0.57, 2,048 0.66, 4,096 0.58, 8,192
+0.61; there is no single-precision FFTW on that host to compare with.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
