@@ -281,6 +281,27 @@ Complex 2,048 goes from 1.22 times FFTW's time to 1.00, and `RFFT` 4,096 from
 [go-fft#122](https://github.com/go-fft/fft/issues/122)).
 The 1.17 quoted for 2,048 under v0.32.1 above is that release's figure.
 
+### Fused 256 and 2,048 kernels on Cascade Lake (v0.39.0)
+
+v0.39.0 is a MINOR release ([go-fft#169](https://github.com/go-fft/fft/pull/169)):
+the fused complex128 kernels for 256 and 2,048 points now also run on Intel
+Cascade Lake (CPUID model 0x55, steppings 5 to 7 only), under the Default and
+FMA plans. The bits of complex 256 and 2,048 change on Cascade Lake, within the
+bound. The CPU signature probe (`SignatureProbe`) comes from go-asmgen v0.27.0.
+Measured on cfarm151, a Cascade Lake KVM guest (stepping 5), against the
+previous Intel route (source: go-fft#169; the kernels themselves are described
+in [go-fft#162](https://github.com/go-fft/fft/issues/162)):
+
+| | Time against the old route | Against FFTW |
+|:--|--:|--:|
+| complex 256 | 0.82 | 1.00 to 0.82 |
+| complex 2,048 | 0.79 | 1.11 to 0.87 |
+
+Complex 1,024 is below the 5 percent bar, so it stays on Zen 4 only. Other
+models and steppings are unmeasured and keep their plans, including Cooper Lake
+and Skylake-SP. A hypervisor's named CPU model can report 0x55; only speed is at
+stake.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
