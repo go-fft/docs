@@ -196,7 +196,13 @@ v0.35.1 ([go-fft#163](https://github.com/go-fft/fft/pull/163), design in
 kernel the subtractions are rewritten as FMAs by -1, with the same bits, which
 balances the add and FMA pipes. Measured on cpu 9 at load at most 1.2, 15
 rounds (source: go-fft#163): the kernel 135.5 to 127.9 ns; `Plan.FFT` 256 146.1
-to 136.9 ns, against FFTW's AVX-512 build at 136.5 ns (1.003 times).
+to 136.9 ns, against FFTW's AVX-512 build at 136.5 ns (1.003 times at v0.35.1).
+
+v0.35.2 ([go-fft#165](https://github.com/go-fft/fft/pull/165)): the fused-256
+test moved into `Plan.execute` so the kernel's wrapper inlines, with the same
+bits. Zen 4, cpu 9, load at most 1, 15 rounds (source: go-fft#165): `Plan.FFT`
+256 136.8 to 134.1 ns, against FFTW's AVX-512 build at 137.2 ns, so 0.977 times:
+complex 256 is now faster than FFTW's best build.
 
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
