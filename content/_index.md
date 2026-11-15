@@ -242,12 +242,24 @@ go-fft#166), ns per call:
 | forward | 886.1 | 816.4 | 749.8 |
 | inverse, unnormalized | 885.5 | 820.4 | 750.8 |
 
-That is 1.18 times FFTW's time, down to 1.09 (the 1.16 quoted for 1,024 under
+That is 1.18 times FFTW's time, down to 1.09 at v0.37.0, and 1.04 since v0.37.1 (below) (the 1.16 quoted for 1,024 under
 v0.32.1 above is that release's figure). The cause, measured with `perf stat` in
 [go-fft#162](https://github.com/go-fft/fft/issues/162): v0.35.2 runs fewer
 instructions than FFTW (9,560 against 12,644) but at an IPC of 1.87 against
 3.29, because of 2,330 stores and 313 loads blocked behind them. Fusing the two
 passes removes half the stores.
+
+### Aligned twiddle tables of the fused kernels (v0.37.1)
+
+v0.37.1 ([go-fft#167](https://github.com/go-fft/fft/pull/167)): the twiddle
+tables of the fused kernels are now 64-byte aligned. They sat at 32 mod 64,
+because Go's linker aligns data symbols to at most 32 bytes, so every 64-byte
+zmm load split two cache lines. The fix is copies built at init; the bits are
+unchanged. Zen 4, cpu 6, 15 rounds (source: go-fft#167): complex 1,024
+`Plan.FFT` 823.9 to 786.6 ns, against FFTW's AVX-512 build at 753.4 ns, so 1.09
+times (v0.37.0) becomes 1.04 times. Complex 256 is unchanged. A two-level
+twiddle table was tried and rejected (+8.3%); the details are in
+[go-fft#162](https://github.com/go-fft/fft/issues/162).
 
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
