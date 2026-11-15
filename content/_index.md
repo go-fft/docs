@@ -302,6 +302,22 @@ models and steppings are unmeasured and keep their plans, including Cooper Lake
 and Skylake-SP. A hypervisor's named CPU model can report 0x55; only speed is at
 stake.
 
+### Odd-length inverse real transform without allocations (v0.39.1)
+
+v0.39.1 ([go-fft#170](https://github.com/go-fft/fft/pull/170)): the odd-length
+inverse real transform (`RealPlan.IRFFT`, odd n) uses the plan's pooled buffer
+instead of two n-length allocations per call. The bits are the same and the
+call allocates nothing. Zen 4, cpu 10, 9 rounds (source: go-fft#170), ns per
+call:
+
+| c2r | Before | After | FFTW |
+|:--|--:|--:|--:|
+| 125 | 489 | 236 | |
+| 1,125 | 4,212 | 2,669 | 2,361 |
+| 3,375 | 13,806 | 8,826 | |
+
+At 1,125 points that is 1.78 times FFTW's time, down to 1.13.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
