@@ -178,6 +178,26 @@ only. Zen 4, one core (source: go-fft#160): 256 points 155.6 to 143.7 ns
 (FFTW's AVX-512 build: 133.4); 256×256 152.9 to 145.4 µs (FFTW: 145.9), now at
 parity with FFTW.
 
+### Fused AVX2 DCT-IV(64) pair, and a rebalanced Zen 4 complex 256 (v0.35.0, v0.35.1)
+
+v0.35.0 is a MINOR release ([go-fft#164](https://github.com/go-fft/fft/pull/164)):
+on amd64 with AVX2+FMA, `DCTPair` and `DCTMixedPair` run a fused AVX2 kernel at
+64 points. On amd64 the pair is now bit-different from two single calls, within
+the same error bound. Zen 4, ns for two transforms, against FFTW's REDFT11
+(source: go-fft#164); the single `DCT` 64 call is unchanged at 59.5 ns:
+
+| | Before | After | FFTW |
+|:--|--:|--:|--:|
+| `DCTPair` | 122.5 | 58.5 | 180.9 |
+| `DCTMixedPair` | 122.5 | 68.3 | 178.8 (float32) |
+
+v0.35.1 ([go-fft#163](https://github.com/go-fft/fft/pull/163), design in
+[go-fft#162](https://github.com/go-fft/fft/issues/162)): in the Zen 4 complex 256
+kernel the subtractions are rewritten as FMAs by -1, with the same bits, which
+balances the add and FMA pipes. Measured on cpu 9 at load at most 1.2, 15
+rounds (source: go-fft#163): the kernel 135.5 to 127.9 ns; `Plan.FFT` 256 146.1
+to 136.9 ns, against FFTW's AVX-512 build at 136.5 ns (1.003 times).
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
