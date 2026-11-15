@@ -155,6 +155,29 @@ fuse, `Exact` equals it; on amd64 with FMA3 they differ in the last bits. The
 constants and the method are in the repository's
 [docs/accuracy.md](https://github.com/go-fft/fft/blob/main/docs/accuracy.md).
 
+### SIMD scaling of the normalized inverse, and complex 256 on Zen 4 (v0.34.0)
+
+v0.34.0 is a MINOR release. [go-fft#161](https://github.com/go-fft/fft/pull/161):
+every normalized inverse and `Norm` path (`Plan.IFFT`, `PlanN`, `RealPlan`,
+`RealPlan2`, the `With` forms, Bluestein and Rader) now scales with
+go-simd/floats `Scale`. Default plans change bits on signed zeros and
+infinities: (1-0i)·¼ now gives -0, and an Inf in one part no longer turns the
+other part into NaN. `Options.Exact` keeps the old bits. Zen 4, one core, ns per
+call (source: go-fft#161):
+
+| | Before | After |
+|:--|--:|--:|
+| `Plan.IFFT` 256 | 297.6 | 184.3 |
+| `PlanN.IFFT` 64² | 7,768 | 5,994 |
+| `RealPlan.RFFTNorm` 256 | 193.9 | 141.0 |
+| `IFFTWith` 256 | 545.6 | 435.6 |
+
+[go-fft#160](https://github.com/go-fft/fft/pull/160): a fused two-pass AVX-512
+kernel for complex128 256 points on a Zen 4, used by the Default and FMA plans
+only. Zen 4, one core (source: go-fft#160): 256 points 155.6 to 143.7 ns
+(FFTW's AVX-512 build: 133.4); 256×256 152.9 to 145.4 µs (FFTW: 145.9), now at
+parity with FFTW.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
