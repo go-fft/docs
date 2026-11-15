@@ -228,6 +228,27 @@ ns per call, v0.35.2 against v0.36.0 (source: the
 
 The direct DCT-IV 64 call is unchanged.
 
+### Fused two-pass 32×32 kernel for complex 1,024 on Zen 4 (v0.37.0)
+
+v0.37.0 is a MINOR release ([go-fft#166](https://github.com/go-fft/fft/pull/166)):
+a fused two-pass 32×32 AVX-512 kernel for complex128 1,024 points on a Zen 4,
+under the Default and FMA plans only (`Exact` and `NoFMA` keep the old path);
+`PlanN` rows of 1,024 use it too. The bits of complex 1,024 change on Zen 4,
+within the bound. Zen 4, cpu 6, 15 interleaved rounds, load at most 1.3 (source:
+go-fft#166), ns per call:
+
+| | Before | After | FFTW AVX-512 |
+|:--|--:|--:|--:|
+| forward | 886.1 | 816.4 | 749.8 |
+| inverse, unnormalized | 885.5 | 820.4 | 750.8 |
+
+That is 1.18 times FFTW's time, down to 1.09 (the 1.16 quoted for 1,024 under
+v0.32.1 above is that release's figure). The cause, measured with `perf stat` in
+[go-fft#162](https://github.com/go-fft/fft/issues/162): v0.35.2 runs fewer
+instructions than FFTW (9,560 against 12,644) but at an IPC of 1.87 against
+3.29, because of 2,330 stores and 313 loads blocked behind them. Fusing the two
+passes removes half the stores.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
