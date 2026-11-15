@@ -204,6 +204,30 @@ bits. Zen 4, cpu 9, load at most 1, 15 rounds (source: go-fft#165): `Plan.FFT`
 256 136.8 to 134.1 ns, against FFTW's AVX-512 build at 137.2 ns, so 0.977 times:
 complex 256 is now faster than FFTW's best build.
 
+### Fused DCT-IV(128) on arm64 (v0.36.0)
+
+v0.36.0 is a MINOR release ([go-fft#158](https://github.com/go-fft/fft/pull/158)):
+on arm64 the DCT-IV of 128 points runs a fused kernel, with pair forms at 128
+(`DCTPair` and the others), for callers of a `DCTPlan` of 128 points. An MDCT of
+N samples runs a DCT-IV of N/2: the MDCT and IMDCT at N=128 samples now run the
+fused DCT-IV of 64 (new for the MDCT path), which is the MDCT gain below. N=256
+samples, whose DCT-IV is 128 points, keeps the old path by default, because the
+fused route measured 3 to 18 percent slower there on a Neoverse-N1. The bits of the DCT-IV of 128 change on arm64, within the same
+error bound. Neoverse-N1 (cfarm424), one core, 8 interleaved rounds, medians,
+ns per call, v0.35.2 against v0.36.0 (source: the
+[table in go-fft#158](https://github.com/go-fft/fft/pull/158#issuecomment-6898301827)):
+
+| | v0.35.2 | v0.36.0 | Change |
+|:--|--:|--:|--:|
+| DCT-IV 128 float64 | 502.9 | 438.1 | -12.9% |
+| DCT-IV 128 Mixed | 505.2 | 493.0 | -2.4% |
+| DCT-IV 128 pair (two float64) | 1,021 | 495.1 | -51.5% |
+| DCT-IV 128 Mixed pair | 1,035 | 594.0 | -42.6% |
+| MDCT / IMDCT 128 samples float64 (DCT-IV 64) | 324.7 / 340.9 | 284.4 / 313.2 | -12.4% / -8.1% |
+| MDCT / IMDCT 128 samples Mixed (DCT-IV 64) | 339.8 / 358.0 | 321.1 / 331.3 | -5.5% / -7.4% |
+
+The direct DCT-IV 64 call is unchanged.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
