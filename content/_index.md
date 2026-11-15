@@ -318,11 +318,6 @@ call:
 
 At 1,125 points that is 1.78 times FFTW's time, down to 1.13.
 
-The complex 1,080, 1,920 and 1,296 ratios of 1.92, 1.65 and 1.43 that earlier
-sweeps gave came from an inflated sweep; the rerun gives 1.23, 1.15 and 1.13
-(see the BENCHMARKS section of go-fft#170 and
-[go-fft#162](https://github.com/go-fft/fft/issues/162)).
-
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
