@@ -261,6 +261,26 @@ times (v0.37.0) becomes 1.04 times. Complex 256 is unchanged. A two-level
 twiddle table was tried and rejected (+8.3%); the details are in
 [go-fft#162](https://github.com/go-fft/fft/issues/162).
 
+### Fused 32×64 kernel for complex 2,048 on Zen 4 (v0.38.0)
+
+v0.38.0 is a MINOR release ([go-fft#168](https://github.com/go-fft/fft/pull/168)):
+a fused 32×64 AVX-512 kernel for complex128 2,048 points on a Zen 4, under the
+Default and FMA plans only; `RFFT` 4,096 uses it through its half-length plan.
+The bits of complex 2,048 change on Zen 4, within the bound. The twiddle tables
+are aligned in place inside static arrays, with no heap allocation at init. Zen
+4, cpu 6, load at most 1.3, 15 rounds (source: go-fft#168), ns per call:
+
+| | v0.37.1 | v0.38.0 | FFTW AVX-512 |
+|:--|--:|--:|--:|
+| complex 2,048 forward | 2,272 | 1,875 | 1,869 |
+| complex 2,048 inverse, unnormalized | 2,286 | 1,872 | 1,864 |
+| `RFFT` 4,096 | 2,789 | 2,502 | 2,493 |
+
+Complex 2,048 goes from 1.22 times FFTW's time to 1.00, and `RFFT` 4,096 from
+1.12 to 1.00 (the `RFFT` 4,096 gap tracked in
+[go-fft#122](https://github.com/go-fft/fft/issues/122)).
+The 1.17 quoted for 2,048 under v0.32.1 above is that release's figure.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
