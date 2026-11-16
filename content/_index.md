@@ -347,10 +347,23 @@ ns per transform:
 | 4,096 | 4,578, 4,686 | 2,170, 2,228 | 0.47 | 2,277, 2,232 | 0.95 to 1.00 |
 | 8,192 | 8,568, 8,821 | 5,221, 5,307 | 0.61 | 7,221, 7,154 | 0.72 to 0.74 |
 
-Sizes 64, 128, 256 and 2,048 are still above 1.05 times FFTW's time. On the
+At v0.40.0, sizes 64, 128, 256 and 2,048 were still above 1.05 times FFTW's
+time (see v0.41.0 below). On the
 Cascade Lake (cfarm151, stepping 5) the kernels take, of the old plans' time:
 64 0.49, 128 0.43, 256 0.47, 512 0.53, 1,024 0.57, 2,048 0.66, 4,096 0.58, 8,192
 0.61; there is no single-precision FFTW on that host to compare with.
+
+### Complex64 call path and a 32×64 kernel at 2,048 (v0.41.0)
+
+v0.41.0 is a MINOR release ([go-fft#172](https://github.com/go-fft/fft/pull/172),
+README in [go-fft#173](https://github.com/go-fft/fft/pull/173)): on a Zen 4 and a
+Cascade Lake, complex64 calls the fused kernel through one inlined function per
+length, and `Plan32.FFT` goes straight to `execute`. The 2,048-point kernel is
+now 32×64: 8 percent faster than 64×32 on a Zen 4 and 11 percent on a Cascade
+Lake. The bits of complex64 2,048 change, within the bound. Against FFTW's
+single-precision build on a Zen 4 (source: go-fft#172), the ratios of go-fft's
+time are: 64 at 1.01 to 1.04, 128 at 1.02, 256 at 0.98 to 1.01, 2,048 at 0.94 to
+0.99. No complex64 length from 64 to 8,192 is now above 1.05.
 
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
