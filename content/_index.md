@@ -365,6 +365,27 @@ single-precision build on a Zen 4 (source: go-fft#172), the ratios of go-fft's
 time are: 64 at 1.01 to 1.04, 128 at 1.02, 256 at 0.98 to 1.01, 2,048 at 0.94 to
 0.99. No complex64 length from 64 to 8,192 is now above 1.05.
 
+### Fused DCT-II and DCT-III at 32, 64 and 128 points (v0.42.0)
+
+v0.42.0 is a MINOR release ([go-fft#174](https://github.com/go-fft/fft/pull/174)),
+built on go-simd/floats v0.27.0
+([go-simd/floats#68](https://github.com/go-simd/floats/pull/68)). DCT-II and
+DCT-III at 32, 64 and 128 points use a fused route: the gather goes straight into
+the half-length FFT, followed by one vectorised post pass with the new generic
+`floats.MirrorCombine` and `floats.MirrorCombineSplit` (AVX2+FMA on amd64, a
+portable loop elsewhere). The DCT-II and DCT-III bits change at those sizes,
+within the bound. Ratio of go-fft's time to FFTW 3.3.10's AVX-512 build on a Zen
+4, v0.41.0 to v0.42.0 (source: go-fft#174):
+
+| Size | DCT-II | DCT-III |
+|:--|--:|--:|
+| 32 | 1.57 to 1.35 | 1.82 to 1.67 |
+| 64 | 1.25 to 1.03 | 1.40 to 1.32 |
+| 128 | 1.03 to 0.79 | 1.12 to 1.07 |
+
+DCT-III is still above 1.05 times FFTW's time, because a scalar reversed-gather
+complex multiply remains.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
