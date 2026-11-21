@@ -386,6 +386,26 @@ within the bound. Ratio of go-fft's time to FFTW 3.3.10's AVX-512 build on a Zen
 DCT-III is still above 1.05 times FFTW's time, because a scalar reversed-gather
 complex multiply remains.
 
+### DCT-III reversed-gather multiply in SIMD (v0.43.0)
+
+v0.43.0 is a MINOR release ([go-fft#175](https://github.com/go-fft/fft/pull/175)),
+built on go-simd/floats v0.28.0
+([go-simd/floats#69](https://github.com/go-simd/floats/pull/69)), which it now
+requires. The DCT-III inverse runs its reversed-gather complex multiply through
+the new `floats.CMulZipRev` (AVX2+FMA on amd64, a portable loop elsewhere), the
+scalar step v0.42.0 left. The DCT-III bits change, within the bound. DCT-III
+time, v0.42.0 to v0.43.0, on a Zen 4, with the ratio to FFTW 3.3.10's AVX-512
+build (source: go-fft#175):
+
+| Size | v0.42.0 | v0.43.0 | Ratio to FFTW |
+|:--|--:|--:|--:|
+| 32 | 72.1 ns | 69.7 ns | 1.60 |
+| 64 | 111.2 ns | 97.9 ns | 1.15 |
+| 128 | 192.9 ns | 159.7 ns | 0.89 |
+
+DCT-III at 128 points is now faster than FFTW's; 32 and 64 are still above 1.05
+times its time.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
