@@ -512,6 +512,22 @@ Bluestein against v0.47.1, on real hardware (source: go-fft#186):
 
 v0.47.1 changes tests and CI only.
 
+### Bluestein's multiply on ppc64le counts on CTR (v0.49.0)
+
+v0.49.0 is a MINOR release ([go-fft#190](https://github.com/go-fft/fft/pull/190)),
+built on go-simd/floats v0.40.0: the ppc64le `CMulTo` loop counts on the CTR
+register, so there is no exit mispredict from n=96, and its minimum length drops
+from 40 to 35. The default path's bits change on ppc64le only at n=38; `Exact`
+and `NoFMA` are unchanged, and nothing changes on other architectures. Whole
+Bluestein on POWER9 against v0.48.0 (source: go-fft#190):
+
+| CPU | n | Change |
+|:--|--:|--:|
+| POWER9 (ppc64le) | 47 | -1.4% |
+| POWER9 (ppc64le) | 94 | -0.6% |
+| POWER9 (ppc64le) | 4,099 | no change |
+| POWER9 (ppc64le) | 10,007 | -0.4% |
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
