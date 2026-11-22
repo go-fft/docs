@@ -487,6 +487,31 @@ source: go-fft#184):
 
 Large n on amd64 shows no measurable change.
 
+### Bluestein's multiply on s390x and ppc64le (v0.48.0)
+
+v0.48.0 is a MINOR release ([go-fft#186](https://github.com/go-fft/fft/pull/186)),
+built on go-simd/floats v0.39.0, which brings `CMulTo` kernels on s390x (VX) and
+ppc64le (VSX) to Bluestein's pointwise product. On those two architectures the
+default path no longer equals the `Options{Exact: true}` and `Options{NoFMA: true}`
+bits: the kernels' contract is an error bound, not the Go loop's bits (documented
+in the `NoFMA` doc of `options.go` and in the README). `Exact` and `NoFMA` bits are
+unchanged everywhere, and amd64 and arm64 are unchanged. Accuracy is within the
+asserted bounds (1.5 for complex-to-complex, 2.0 for real-to-complex). Whole
+Bluestein against v0.47.1, on real hardware (source: go-fft#186):
+
+| CPU | n | Change |
+|:--|--:|--:|
+| IBM z17 (s390x) | 47 | -3.8% |
+| IBM z17 (s390x) | 94 | -2.9% |
+| IBM z17 (s390x) | 4,099 | -3.4% |
+| IBM z17 (s390x) | 10,007 | -1.3% |
+| POWER9 (ppc64le) | 47 | -0.7% |
+| POWER9 (ppc64le) | 94 | -0.4% |
+| POWER9 (ppc64le) | 4,099 | -0.6% |
+| POWER9 (ppc64le) | 10,007 | -0.9% |
+
+v0.47.1 changes tests and CI only.
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
