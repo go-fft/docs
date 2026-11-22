@@ -460,10 +460,32 @@ transform (source: go-fft#182):
 | Zen 4 | +1 to 2% |
 | Neoverse N1 | +1 to 2% |
 
-Cascade Lake ran the scalar loop before. The small Zen 4 and Neoverse N1
-regression is tracked in
-[go-simd/floats#82](https://github.com/go-simd/floats/issues/82) and
-[go-simd/floats#81](https://github.com/go-simd/floats/issues/81).
+Cascade Lake ran the scalar loop before. The small-n part of the Zen 4 and
+Neoverse N1 regression is recovered in v0.47.0.
+
+### Bluestein's multiply finishes its own tail (v0.47.0)
+
+v0.47.0 is a MINOR release ([go-fft#184](https://github.com/go-fft/fft/pull/184)),
+built on go-simd/floats v0.36.0, whose `CMulTo` now finishes its own tail
+([go-simd/floats#83](https://github.com/go-simd/floats/pull/83), which fixes
+[go-simd/floats#81](https://github.com/go-simd/floats/issues/81) and
+[go-simd/floats#82](https://github.com/go-simd/floats/issues/82)). The
+default-path Bluestein bits change on amd64; arm64 is bit-identical, and
+`Options{Exact: true}` and `Options{NoFMA: true}` are unchanged. Accuracy is
+unchanged: the complex Bluestein worst ratio is 0.674 and the family worst 0.718,
+under the 0.74 bound. Whole Bluestein against v0.46.0 (benchstat, p < 0.01,
+source: go-fft#184):
+
+| CPU | n | Change |
+|:--|--:|--:|
+| Zen 4 | 47 | -2.7% |
+| Cascade Lake | 47 | -5.5% |
+| Cascade Lake | 94 | -3.9% |
+| Neoverse N1 | 47 | -5.0% |
+| Neoverse N1 | 94 | -5.2% |
+| Neoverse N1 | 10,007 | -2.5% |
+
+Large n on amd64 shows no measurable change.
 
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
