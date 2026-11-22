@@ -432,6 +432,39 @@ the exact value, where the table route returned NaN; non-finite outputs may
 therefore differ by route. Pairs of non-finite inputs are tracked in
 [go-fft#178](https://github.com/go-fft/fft/issues/178).
 
+### Register-pressure scheduling of the DCT kernels (v0.45.1)
+
+v0.45.1 is a PATCH release ([go-fft#181](https://github.com/go-fft/fft/pull/181)),
+bit-identical to v0.44.0. The generator of the 32- and 64-point DCT kernels
+(`internal/gendct23`) now orders instructions with a register-pressure list
+scheduler, and a SHA-256 test pins the kernel bits. Spills: `Dct3x64` 182 to 104
+(frame 1,456 to 832 bytes), `Dct2x64` 98 to 70, `Dct3x32` 23 to 7, `Dct2x32` 7 to
+2. The DCT-III kernel at 64 points, called directly, takes 77.2 to 62.0 ns on a
+Zen 4, about 0.91 times FFTW 3.3.10's time; it was 1.07.
+
+### Bluestein's multiply through go-simd/floats (v0.46.0)
+
+v0.46.0 is a MINOR release ([go-fft#182](https://github.com/go-fft/fft/pull/182)),
+built on go-simd/floats v0.32.0. Bluestein's pointwise complex multiply on the
+default (FMA) path calls `floats.CMulTo`; go-fft's own multiply kernels and the
+riscv64 and s390x generators are deleted. `Options{Exact: true}` and
+`Options{NoFMA: true}` keep the Go loop, and Exact stays bit-identical to
+v0.28.16. The default-path Bluestein bits change on Zen 4 and other FMA CPUs,
+within the bound: the worst Bluestein error ratio is 0.674 (complex n=23, it was
+0.598) and the worst of the family 0.718, under the 0.74 bound. Whole Bluestein
+transform (source: go-fft#182):
+
+| CPU | Change |
+|:--|--:|
+| Cascade Lake | -8 to -30% |
+| Zen 4 | +1 to 2% |
+| Neoverse N1 | +1 to 2% |
+
+Cascade Lake ran the scalar loop before. The small Zen 4 and Neoverse N1
+regression is tracked in
+[go-simd/floats#82](https://github.com/go-simd/floats/issues/82) and
+[go-simd/floats#81](https://github.com/go-simd/floats/issues/81).
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
