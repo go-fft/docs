@@ -406,6 +406,32 @@ build (source: go-fft#175):
 DCT-III at 128 points is now faster than FFTW's; 32 and 64 are still above 1.05
 times its time.
 
+### Straight-line DCT-II and DCT-III kernels at 32 and 64 points (v0.44.0)
+
+v0.44.0 is a MINOR release ([go-fft#177](https://github.com/go-fft/fft/pull/177),
+[go-fft#179](https://github.com/go-fft/fft/pull/179)). DCT-II and DCT-III at 32
+and 64 points run one generated straight-line kernel (`internal/gendct23`,
+AVX-512 with EVEX scalar instructions): the reorder, the 16- or 32-point FFT, the
+untangle and the twiddle multiply sit in one register-resident body, with 0
+allocations in place and from a stack array. It is routed on Zen 4 only; other
+CPUs, and 128 points on every CPU, keep the table route of v0.43.0. The DCT
+output bits change on Zen 4, within the bound. Zen 4 (Ryzen 9 7950X), one core,
+against FFTW 3.3.10, ns per call (source: go-fft#177):
+
+| Size | v0.43.0 | v0.44.0 | FFTW | Ratio to FFTW |
+|:--|--:|--:|--:|--:|
+| DCT-II 32 | 57.0 | 30.6 | 41.9 | 0.73 |
+| DCT-III 32 | 69.3 | 39.8 | 43.5 | 0.91 |
+| DCT-II 64 | 84.1 | 68.7 | 81.3 | 0.85 |
+| DCT-III 64 | 98.0 | 90.0 | 84.3 | 1.07 |
+
+DCT-III at 64 points is still above 1.05 times FFTW's time.
+
+Non-finite inputs: for a single infinite input the kernel returns an infinity,
+the exact value, where the table route returned NaN; non-finite outputs may
+therefore differ by route. Pairs of non-finite inputs are tracked in
+[go-fft#178](https://github.com/go-fft/fft/issues/178).
+
 ### Float32 data with float64 accuracy (`...Mixed`, v0.30.0)
 
 An audio codec holds its samples and coefficients in `float32`, and a float32
